@@ -669,8 +669,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
    RECEPCIÓN DE ÓRDENES DE COMPRA · QUINTA
    App móvil autocontenida — sin internet, sin instalación.
    ================================================================ */
-const BUILD_ID = '20260816-2132';
-const APP_VER  = '1.0';
+const BUILD_ID = '20260817-multifactura';
+const APP_VER  = '1.1';
 
 /* ---------------- utilidades ---------------- */
 const $  = id => document.getElementById(id);
@@ -700,6 +700,117 @@ function toast(msg,ms){ const t=document.createElement('div'); t.className='toas
   $('toastHost').appendChild(t); setTimeout(()=>t.remove(), ms||2200); }
 function modal(html){ const h=$('modalHost'); h.innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">'+html+'</div></div>'; }
 function closeModal(){ $('modalHost').innerHTML=''; }
+
+/* ================================================================
+   FACTURAS MÚLTIPLES POR OC
+   Una recepción puede tener varias facturas. Cada lote se asigna
+   a una de ellas (campo lt.fid). Se mantiene RECEP.factura como
+   texto "123 / 456" para compatibilidad con lo ya guardado.
+   ================================================================ */
+function facArr(r){ const x = r||RECEP; return (x && Array.isArray(x.facturas))? x.facturas : []; }
+function facMap(r){ const m={}; facArr(r).forEach(f=>m[f.id]=f.num); return m; }
+function facNum(fid,r){ if(!fid) return ''; return facMap(r)[fid]||''; }
+function facTxt(r){ return facArr(r).map(f=>up(f.num)).filter(Boolean).join(' / '); }
+function nuevoFid(r){ const ids=facArr(r).map(f=>f.id); let n=1; while(ids.indexOf('f'+n)>=0) n++; return 'f'+n; }
+/* migra recepciones antiguas (un solo campo factura) al nuevo formato */
+function migraRecep(r){
+  if(!r) return r;
+  if(!r.lineas) r.lineas={};
+  if(!Array.isArray(r.facturas)){
+    r.facturas=[];
+    const f0=up(r.factura);
+    if(f0){ const id='f1'; r.facturas.push({id:id,num:f0});
+      for(const k in r.lineas) (r.lineas[k]||[]).forEach(l=>{ if(!l.fid) l.fid=id; }); }
+  }
+  return r;
+}
+/* totales de una factura dentro de la recepción abierta */
+function totFactura(fid){ let cant=0,cajas=0,lotes=0,bultos=0;
+  for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{
+    if((l.fid||'')===fid){ lotes++; cant+=num(l.cant); cajas+=num(l.cajas); bultos+=Math.max(1,parseInt(l.bultos||1,10)); } });
+  return {cant,cajas,lotes,bultos}; }
+function lotesSinFactura(){ let n=0; for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(!l.fid) n++; }); return n; }
+/* factura por defecto: si sólo hay una, es esa */
+function facDefault(){ const f=facArr(); return f.length===1? f[0].id : ''; }
+
+function facChipsHTML(){
+  const fs=facArr(), sin=lotesSinFactura();
+  return '<div class="chips">'+
+    fs.map(f=>{ const t=totFactura(f.id);
+      return '<button class="chip" onclick="formFactura(\''+esc(f.id)+'\')">Factura <b>'+esc(f.num)+'</b>'+
+        '<span class="dim"> · '+(t.lotes? (t.lotes+' lote(s) · '+fmt(t.cant)) : 'sin lotes')+'</span></button>'; }).join('')+
+    '<button class="chip" style="border-color:var(--acc);color:var(--acc)" onclick="formFactura(null)">+ Agregar factura</button>'+
+  '</div>'+
+  (!fs.length? '<div class="dim" style="margin-top:7px">Si la OC llega en 2 o más facturas, agrégalas todas y en cada lote eliges cuál la trajo.</div>':'')+
+  (fs.length>1 && sin? '<div class="warnbox" style="margin-top:8px">'+sin+' lote(s) sin factura asignada. Ábrelos y elige la factura.</div>':'');
+}
+function formFactura(fid){
+  const f = fid? facArr().find(x=>x.id===fid) : null;
+  const t = f? totFactura(f.id) : null;
+  modal('<h3>'+(f?'Editar factura':'Agregar factura')+'</h3>'+
+    '<div><label class="f">N° de factura</label><input type="text" id="mFacNum" inputmode="numeric" placeholder="Ej: 128455" value="'+esc(f?f.num:'')+'"></div>'+
+    (t? '<div class="dim" style="margin-top:8px">'+t.lotes+' lote(s) asignados · '+fmt(t.cant)+(t.cajas?(' · '+fmt(t.cajas)+' cajas'):'')+'</div>':'')+
+    '<div class="dim" style="margin-top:8px">Cada lote que registres se asigna a una factura, así el reporte y las tarjas muestran la factura correcta.</div>'+
+    '<div class="btnrow" style="margin-top:12px">'+
+      '<button class="btn sec" onclick="closeModal()">Cancelar</button>'+
+      (f?'<button class="btn danger" onclick="delFactura(\''+esc(f.id)+'\')">Eliminar</button>':'')+
+      '<button class="btn" onclick="saveFactura('+(f? ("'"+esc(f.id)+"'") : 'null')+')">Guardar</button>'+
+    '</div>');
+  setTimeout(()=>{ const e=$('mFacNum'); if(e && !f) e.focus(); },120);
+}
+function saveFactura(fid){
+  const n = up($('mFacNum').value);
+  if(!n){ toast('Ingresa el número de factura'); return; }
+  if(!Array.isArray(RECEP.facturas)) RECEP.facturas=[];
+  if(RECEP.facturas.some(f=>f.num===n && f.id!==fid)){ toast('Esa factura ya está agregada'); return; }
+  if(fid){ const f=RECEP.facturas.find(x=>x.id===fid); if(f) f.num=n; }
+  else{
+    const nid=nuevoFid(); RECEP.facturas.push({id:nid,num:n});
+    if(RECEP.facturas.length===1){ // primera factura: toma los lotes que aún no tienen
+      for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(!l.fid) l.fid=nid; });
+    }
+  }
+  closeModal(); saveRecep(); refrescarVista();
+  toast(fid?'Factura actualizada':'Factura agregada');
+}
+function delFactura(fid){
+  const t=totFactura(fid);
+  if(t.lotes && !confirm('Esta factura tiene '+t.lotes+' lote(s) asignados. Quedarán sin factura. ¿Eliminar igual?')) return;
+  RECEP.facturas = facArr().filter(f=>f.id!==fid);
+  for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(l.fid===fid) l.fid=''; });
+  closeModal(); saveRecep(); refrescarVista(); toast('Factura eliminada');
+}
+function selFacturaHTML(sel){
+  const fs=facArr();
+  const cur = (sel!=null && sel!=='')? sel : facDefault();
+  return '<select id="mFac" onchange="onFacSel()">'+
+    '<option value=""'+(cur===''?' selected':'')+'>— sin factura —</option>'+
+    fs.map(f=>'<option value="'+esc(f.id)+'"'+(cur===f.id?' selected':'')+'>Factura '+esc(f.num)+'</option>').join('')+
+    '<option value="__new">+ Nueva factura…</option>'+
+  '</select>';
+}
+function onFacSel(){
+  const v=$('mFac').value, w=$('mFacNewWrap');
+  if(!w) return;
+  w.classList.toggle('hide', v!=='__new');
+  if(v==='__new') setTimeout(()=>{ const e=$('mFacNew'); if(e) e.focus(); },60);
+}
+/* re-dibuja la pantalla activa después de tocar facturas */
+function refrescarVista(){ renderOrden(); if(SCREEN==='resumen') openResumen(); }
+/* resuelve el fid elegido en el modal de lote (crea la factura si es nueva) */
+function fidDesdeModal(){
+  const s=$('mFac'); if(!s) return {ok:true, fid:''};
+  let fid=s.value;
+  if(fid==='__new'){
+    const n=up($('mFacNew')? $('mFacNew').value : '');
+    if(!n){ toast('Escribe el número de la nueva factura'); return {ok:false}; }
+    if(!Array.isArray(RECEP.facturas)) RECEP.facturas=[];
+    const ex=RECEP.facturas.find(f=>f.num===n);
+    if(ex) fid=ex.id;
+    else { fid=nuevoFid(); RECEP.facturas.push({id:fid,num:n}); }
+  }
+  return {ok:true, fid:fid};
+}
 
 /* ---------------- IndexedDB ---------------- */
 let DB=null;
@@ -932,8 +1043,8 @@ function abrirOC(oc){
   if(!o){ toast('Orden no encontrada'); return; }
   ORD = JSON.parse(JSON.stringify(o)); ORD.oc = oc;
   idbGet('rec',oc).then(r=>{
-    RECEP = r || { oc, fecha:hoyISO(), receptor:'', factura:'', guia:'', lineas:{}, creado:new Date().toISOString() };
-    if(!RECEP.lineas) RECEP.lineas={};
+    RECEP = r || { oc, fecha:hoyISO(), receptor:'', factura:'', facturas:[], guia:'', lineas:{}, creado:new Date().toISOString() };
+    migraRecep(RECEP);
     ABIERTA=null; $('filtroProd').value='';
     const hayPend = Object.values(ORD.lineas).some(L=>L.cant-L.entr>0.001);
     FILTRO = hayPend? 'pend' : 'todos';
@@ -966,9 +1077,11 @@ function renderOrden(){
     '<div class="fgrid">'+
       '<div><label class="f">Fecha recepción</label><input type="date" id="fRec" value="'+esc(RECEP.fecha||hoyISO())+'" onchange="RECEP.fecha=this.value;saveRecep(true)"></div>'+
       '<div><label class="f">Recepcionó</label><input type="text" id="fRecep" placeholder="Nombre" value="'+esc(RECEP.receptor||'')+'" oninput="RECEP.receptor=this.value" onchange="saveRecep(true)"></div>'+
-      '<div><label class="f">N° Factura</label><input type="text" id="fFact" inputmode="numeric" placeholder="Factura" value="'+esc(RECEP.factura||'')+'" oninput="RECEP.factura=this.value" onchange="saveRecep(true)"></div>'+
-      '<div><label class="f">Guía de despacho</label><input type="text" id="fGuia" inputmode="numeric" placeholder="Guía" value="'+esc(RECEP.guia||'')+'" oninput="RECEP.guia=this.value" onchange="saveRecep(true)"></div>'+
-    '</div>';
+      '<div class="full"><label class="f">Guía de despacho</label><input type="text" id="fGuia" inputmode="numeric" placeholder="Guía" value="'+esc(RECEP.guia||'')+'" oninput="RECEP.guia=this.value" onchange="saveRecep(true)"></div>'+
+    '</div>'+
+    '<div class="hr"></div>'+
+    '<label class="f">Facturas de esta recepción'+(facArr().length>1? ' ('+facArr().length+')':'')+'</label>'+
+    facChipsHTML();
   renderLineas();
 }
 function setFiltro(f){ FILTRO=f; renderLineas(); }
@@ -1041,9 +1154,12 @@ function lotHTML(L,lt,i){
   if(lt.venc){ txt = 'Vence '+iso2dmy(lt.venc);
     if(d!=null){ if(d<0){cls='b-bad'; txt+=' (VENCIDO)';} else if(d<=30){cls='b-warn'; txt+=' ('+d+' d)';} else {cls='b-ok';} } }
   else { cls='b-neutral'; txt='Sin vencimiento'; }
+  const fn = facNum(lt.fid);
+  const facHTML = fn ? ' · Fact '+esc(fn)
+                     : (facArr().length? ' · <b style="color:#fbbf24">sin factura</b>' : '');
   return '<div class="lotrow">'+
     '<div class="li"><div class="l1">Lote '+esc(lt.lote||'—')+' · '+fmt(lt.cant)+(lt.cajas!==''&&lt.cajas!=null?(' · '+fmt(lt.cajas)+' cajas'):'')+'</div>'+
-      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div></div>'+
+      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+facHTML+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div></div>'+
     '<button class="mini gh" onclick="imprimirLote(\''+esc(L.key)+'\','+i+')">Tarja</button>'+
     '<button class="mini" onclick="formLote(\''+esc(L.key)+'\','+i+')">Editar</button>'+
   '</div>';
@@ -1055,13 +1171,15 @@ function toggleLinea(k){ ABIERTA = (ABIERTA===k? null : k); renderLineas();
 function formLote(key,i){
   const L = ORD.lineas[key];
   const arr = RECEP.lineas[key]||[];
-  const lt = i>=0 ? arr[i] : {lote:'',cant:'',cajas:'',venc:'',elab:'',bultos:1};
+  const lt = i>=0 ? arr[i] : {lote:'',cant:'',cajas:'',venc:'',elab:'',bultos:1,fid:facDefault()};
   const e = estado(L);
   const sugerido = i>=0? lt.cant : Math.max(0, e.pend - e.rec);
   modal(
     '<h3>'+(i>=0?'Editar lote':'Nuevo lote')+'</h3>'+
     '<div class="muted" style="margin:-6px 0 12px">'+esc(L.desc)+'<br>SKU '+esc(L.sku)+' · pendiente '+fmt(e.pend)+'</div>'+
     '<div class="fgrid">'+
+      '<div class="full"><label class="f">Factura que trajo este lote</label>'+selFacturaHTML(lt.fid)+'</div>'+
+      '<div class="full hide" id="mFacNewWrap"><label class="f">N° de la nueva factura</label><input type="text" id="mFacNew" inputmode="numeric" placeholder="Ej: 128455"></div>'+
       '<div class="full"><label class="f">Lote</label><input type="text" id="mLote" value="'+esc(lt.lote)+'" placeholder="LT0000" autocapitalize="characters"></div>'+
       '<div><label class="f">Cantidad recibida</label><input type="number" id="mCant" inputmode="decimal" step="any" value="'+(sugerido||'')+'"></div>'+
       '<div><label class="f">Cajas</label><input type="number" id="mCaj" inputmode="numeric" min="0" step="1" placeholder="0" value="'+(lt.cajas!=null&&lt.cajas!==''?lt.cajas:'')+'"></div>'+
@@ -1082,10 +1200,11 @@ function saveLote(key,i){
         venc=$('mVenc').value, elab=$('mElab').value, bultos=Math.max(1,parseInt($('mBul').value||'1',10)),
         cajas=$('mCaj').value===''? '' : Math.max(0,num($('mCaj').value));
   if(!cant){ toast('Ingresa la cantidad recibida'); return; }
+  const fr = fidDesdeModal(); if(!fr.ok) return;
   if(!RECEP.lineas[key]) RECEP.lineas[key]=[];
-  const obj={lote,cant,cajas,venc,elab,bultos};
+  const obj={lote,cant,cajas,venc,elab,bultos,fid:fr.fid||''};
   if(i>=0) RECEP.lineas[key][i]=obj; else RECEP.lineas[key].push(obj);
-  closeModal(); saveRecep(); renderLineas();
+  closeModal(); saveRecep(); renderOrden();
   const e=estado(ORD.lineas[key]);
   if(e.st==='part') toast('Faltan '+fmt(-e.dif)+' respecto al pendiente');
   else if(e.st==='over') toast('Exceso de '+fmt(e.dif)+' sobre el pendiente');
@@ -1094,12 +1213,13 @@ function saveLote(key,i){
 function delLote(key,i){
   RECEP.lineas[key].splice(i,1);
   if(!RECEP.lineas[key].length) delete RECEP.lineas[key];
-  closeModal(); saveRecep(); renderLineas();
+  closeModal(); saveRecep(); renderOrden();
 }
 function saveRecep(silent){
   if(!RECEP) return;
   let tarjas=0; for(const k in RECEP.lineas) tarjas += RECEP.lineas[k].reduce((s,l)=>s+(l.bultos||1),0);
   RECEP.tarjas=tarjas; RECEP.mod=new Date().toISOString(); RECEP.prov=ORD.prov; RECEP.alm=ORD.alm;
+  RECEP.factura = facTxt(RECEP);   // texto "123 / 456" para historial y compatibilidad
   idbSet('rec',RECEP.oc,RECEP).then(()=>{ if(!silent) {} });
 }
 
@@ -1112,10 +1232,23 @@ function openResumen(){
   const conDif = rows.filter(r=>r.e.st==='part'||r.e.st==='over');
   const sinRec = rows.filter(r=>r.e.st==='none');
   const ok = rows.filter(r=>r.e.st==='ok');
+  const fs=facArr(), sinFac=lotesSinFactura();
+  const facsTxt = facTxt(RECEP);
   $('resContent').innerHTML =
     '<div class="card tight"><div style="font-weight:800">OC '+esc(ORD.oc)+' · '+esc(ORD.prov)+'</div>'+
       '<div class="dim" style="margin-top:4px">Recepción '+iso2dmy(RECEP.fecha)+(RECEP.receptor?(' · '+esc(RECEP.receptor)):'')+
-        (RECEP.factura?(' · Factura '+esc(RECEP.factura)):'')+(RECEP.guia?(' · Guía '+esc(RECEP.guia)):'')+'</div></div>'+
+        (facsTxt?(' · '+(fs.length>1?'Facturas ':'Factura ')+esc(facsTxt)):'')+(RECEP.guia?(' · Guía '+esc(RECEP.guia)):'')+'</div></div>'+
+    (fs.length? '<div class="card"><h2>Documentos ('+fs.length+')</h2>'+
+      fs.map(f=>{ const t=totFactura(f.id);
+        return '<div class="lotrow"><div class="li">'+
+          '<div class="l1">Factura '+esc(f.num)+'</div>'+
+          '<div class="l2">'+t.lotes+' lote(s) · '+fmt(t.cant)+(t.cajas?(' · '+fmt(t.cajas)+' cajas'):'')+' · '+t.bultos+' tarja(s)</div></div>'+
+          (t.bultos? '<button class="mini gh" onclick="imprimirFactura(\''+esc(f.id)+'\')">Tarjas</button>':'')+
+          '<button class="mini" onclick="formFactura(\''+esc(f.id)+'\')">Editar</button></div>'; }).join('')+
+      (sinFac? '<div class="warnbox" style="margin-top:10px">'+sinFac+' lote(s) sin factura asignada.</div>':'')+
+      '<button class="btn gh" style="margin-top:10px" onclick="formFactura(null)">+ Agregar otra factura</button></div>'
+     : '<div class="card"><div class="warnbox">Esta recepción no tiene factura registrada.</div>'+
+       '<button class="btn gh" style="margin-top:10px" onclick="formFactura(null)">+ Agregar factura</button></div>')+
     (conDif.length? '<div class="card"><h2 style="color:#fca5a5">Diferencias detectadas ('+conDif.length+')</h2>'+
       tabla(conDif)+'</div>' : '<div class="card"><div class="okbox">Sin diferencias entre lo pendiente y lo recibido en las líneas trabajadas.</div></div>')+
     (sinRec.length? '<div class="card"><h2>Pendientes sin recibir ('+sinRec.length+')</h2>'+tabla(sinRec)+'</div>':'')+
@@ -1131,7 +1264,7 @@ function cajasLinea(L){ let c=0; (RECEP.lineas[L.key]||[]).forEach(l=>c+=num(l.c
 function tabla(rows){
   return '<table class="rep"><thead><tr><th>Producto</th><th class="n">Ped.</th><th class="n">SAP</th><th class="n">Pend.</th><th class="n">Recib.</th><th class="n">Dif.</th></tr></thead><tbody>'+
     rows.map(({L,e})=>'<tr><td><b>'+esc(L.desc)+'</b><br><span class="dim">SKU '+esc(L.sku)+
-      ((RECEP.lineas[L.key]||[]).length? ' · lotes '+RECEP.lineas[L.key].map(l=>esc(l.lote||'—')).join(', ') : '')+'</span></td>'+
+      ((RECEP.lineas[L.key]||[]).length? ' · lotes '+RECEP.lineas[L.key].map(l=>esc(l.lote||'—')+(facNum(l.fid)?(' (F '+esc(facNum(l.fid))+')'):'')).join(', ') : '')+'</span></td>'+
       '<td class="n">'+fmt(L.cant)+'</td><td class="n">'+fmt(L.entr)+'</td><td class="n">'+fmt(e.pend)+'</td>'+
       '<td class="n">'+fmt(e.rec)+cajasLinea(L)+'</td><td class="n" style="color:'+(e.dif===0?'#6ee7a0':(e.dif<0?'#fbbf24':'#fca5a5'))+'"><b>'+(e.dif>0?'+':'')+fmt(e.dif)+'</b></td></tr>').join('')+
     '</tbody></table>';
@@ -1143,10 +1276,10 @@ function exportExcel(){
     const e=estado(L), lotes=RECEP.lineas[L.key]||[];
     const estTxt = e.st==='ok'?'CONFORME':e.st==='part'?'FALTANTE':e.st==='over'?'EXCESO':
                    e.st==='closed'?'CERRADA EN SAP':'POR RECIBIR';
-    const base=[ORD.oc,ORD.prov,L.alm||ORD.alm,iso2dmy(RECEP.fecha),RECEP.receptor||'',RECEP.factura||'',RECEP.guia||'',L.sku,L.desc,L.linea,
+    const base=fac=>[ORD.oc,ORD.prov,L.alm||ORD.alm,iso2dmy(RECEP.fecha),RECEP.receptor||'',fac,RECEP.guia||'',L.sku,L.desc,L.linea,
                 L.cant,L.entr,e.pend,e.rec,e.dif,estTxt];
-    if(!lotes.length) out.push(base.concat(['','','','','','']));
-    else lotes.forEach(lt=>out.push(base.concat([lt.lote,lt.cant,lt.cajas===''?'':num(lt.cajas),iso2dmy(lt.venc),iso2dmy(lt.elab),lt.bultos||1])));
+    if(!lotes.length) out.push(base(facTxt(RECEP)).concat(['','','','','','']));
+    else lotes.forEach(lt=>out.push(base(facNum(lt.fid)).concat([lt.lote,lt.cant,lt.cajas===''?'':num(lt.cajas),iso2dmy(lt.venc),iso2dmy(lt.elab),lt.bultos||1])));
   });
   const ws=XLSX.utils.aoa_to_sheet(out);
   ws['!cols']=[{wch:9},{wch:30},{wch:11},{wch:12},{wch:14},{wch:12},{wch:12},{wch:10},{wch:46},{wch:6},{wch:12},{wch:12},{wch:11},{wch:13},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
@@ -1155,7 +1288,7 @@ function exportExcel(){
 }
 function borrarRecep(){
   if(!confirm('¿Borrar la recepción registrada de la OC '+ORD.oc+'?')) return;
-  idbDel('rec',ORD.oc).then(()=>{ RECEP={oc:ORD.oc,fecha:hoyISO(),receptor:'',factura:'',guia:'',lineas:{}};
+  idbDel('rec',ORD.oc).then(()=>{ RECEP={oc:ORD.oc,fecha:hoyISO(),receptor:'',factura:'',facturas:[],guia:'',lineas:{}};
     toast('Recepción borrada'); show('orden'); renderOrden(); });
 }
 
@@ -1166,10 +1299,12 @@ function showHist(){
   idbAll('rec').then(rs=>{
     rs.sort((a,b)=>(b.mod||'').localeCompare(a.mod||''));
     $('histList').innerHTML = rs.length? rs.map(r=>{
+      migraRecep(r);
       let n=0; for(const k in r.lineas) n+=r.lineas[k].length;
+      const ft=facTxt(r), nf=facArr(r).length;
       return '<div class="item" onclick="abrirOC(\''+esc(r.oc)+'\')"><div class="g">'+
         '<div class="t">OC '+esc(r.oc)+' · '+esc(r.prov||'')+'</div>'+
-        '<div class="s">'+iso2dmy(r.fecha)+' · '+n+' lote(s) · '+(r.tarjas||0)+' tarja(s)'+(r.factura?(' · Fact '+esc(r.factura)):'')+(r.receptor?(' · '+esc(r.receptor)):'')+'</div>'+
+        '<div class="s">'+iso2dmy(r.fecha)+' · '+n+' lote(s) · '+(r.tarjas||0)+' tarja(s)'+(ft?(' · '+(nf>1?'Facts ':'Fact ')+esc(ft)):'')+(r.receptor?(' · '+esc(r.receptor)):'')+'</div>'+
         '</div><div class="chevron">›</div></div>';
     }).join('') : '<div class="empty"><div class="ic">📄</div>Todavía no hay recepciones guardadas</div>';
     show('hist');
@@ -1330,10 +1465,18 @@ function tarjasPDF(tarjas, nombre){
     });
     // VENCIMIENTO
     chip(doc,30,246,'VENCIMIENTO');
+    const anchoV = t.factura? 460 : 500;
     const vt = t.venc? iso2dmy(t.venc) : 'SIN VENCIMIENTO';
-    const vs2 = fitSize(doc, vt, 500, 86, 26);
+    const vs2 = fitSize(doc, vt, anchoV, 86, 26);
     doc.setFont('helvetica','bold'); doc.setFontSize(vs2);
     doc.text(vt, 40, 348);
+    if(t.factura){                       // factura visible: la OC puede venir en varias
+      doc.line(560,238,560,378);
+      chip(doc,570,246,'FACTURA');
+      const fs2 = fitSize(doc, String(t.factura), 230, 40, 14);
+      doc.setFont('helvetica','bold'); doc.setFontSize(fs2);
+      doc.text(String(t.factura), 578, 348);
+    }
     // fechas
     chip(doc,30,386,'DIA DE RECEPCION');
     doc.setFont('helvetica','bold'); doc.setFontSize(27);
@@ -1378,12 +1521,26 @@ function tarjasDeLinea(key){
     const n = Math.max(1, parseInt(lt.bultos||1,10));
     const cantU = n>1 ? (num(lt.cant)/n) : num(lt.cant);
     const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
+    const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
     for(let b=1;b<=n;b++){
       out.push({producto:L.desc, sku:L.sku, lote:lt.lote, cant:cantU, cajas:cajasU, venc:lt.venc, elab:lt.elab,
-                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:RECEP.factura||'', bulto:b, bultos:n});
+                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:fnum, fid:lt.fid||'', bulto:b, bultos:n});
     }
   });
   return out;
+}
+/* tarjas sólo de una factura (útil cuando la OC llega en varias) */
+function tarjasDeFactura(fid){
+  let out=[];
+  Object.keys(ORD.lineas).forEach(k=>{ out=out.concat(tarjasDeLinea(k).filter(t=>(t.fid||'')===fid)); });
+  return out;
+}
+function imprimirFactura(fid){
+  const t=tarjasDeFactura(fid);
+  if(!t.length){ toast('Esa factura no tiene lotes'); return; }
+  const n=facNum(fid)||'sf';
+  tarjasPDF(t, 'Tarjas_OC'+ORD.oc+'_F'+String(n).replace(/\W/g,'')+'.pdf');
+  toast(t.length+' tarja(s) de la factura '+n);
 }
 function imprimirLinea(key){
   const t = tarjasDeLinea(key);
@@ -1396,8 +1553,9 @@ function imprimirLote(key,i){
   const n=Math.max(1,parseInt(lt.bultos||1,10));
   const cantU = n>1? num(lt.cant)/n : num(lt.cant);
   const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
+  const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
   const t=[]; for(let b=1;b<=n;b++) t.push({producto:L.desc,sku:L.sku,lote:lt.lote,cant:cantU,cajas:cajasU,venc:lt.venc,
-      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:RECEP.factura||'',bulto:b,bultos:n});
+      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:fnum,fid:lt.fid||'',bulto:b,bultos:n});
   tarjasPDF(t, 'Tarja_OC'+ORD.oc+'_'+L.sku+'_'+(lt.lote||'').replace(/\W/g,'')+'.pdf');
 }
 function imprimirTodas(){
@@ -1430,11 +1588,13 @@ function cargarDia(){
     const dia = rs.filter(r => (r.fecha||'') === DIA);
     const ordenes = [];
     dia.forEach(r=>{
+      migraRecep(r);
+      const fmap = facMap(r);
       const cat = CAT && CAT.ordenes[r.oc];
       const lineas = [];
       for(const key in r.lineas){
         const L = cat && cat.lineas[key];
-        const lotes = r.lineas[key]||[];
+        const lotes = (r.lineas[key]||[]).map(l=>{ const c=Object.assign({},l); c.fac = fmap[l.fid]||''; return c; });
         const rec = lotes.reduce((s,l)=>s+num(l.cant),0);
         const cajas = lotes.reduce((s,l)=>s+num(l.cajas),0);
         const pend = L? Math.max(0, L.cant - L.entr) : 0;
@@ -1445,9 +1605,12 @@ function cargarDia(){
                       estado: !L? 'S/D' : Math.abs(dif)<0.001? 'CONFORME' : (dif<0? 'FALTANTE':'EXCESO') });
       }
       lineas.sort((a,b)=> String(a.desc).localeCompare(String(b.desc)));
-      if(lineas.length) ordenes.push({ oc:r.oc, prov:r.prov||(cat?cat.prov:''), alm:r.alm||(cat?cat.alm:''),
-                                       receptor:r.receptor||'', factura:r.factura||'', guia:r.guia||'',
-                                       fecha:r.fecha, lineas });
+      if(lineas.length){
+        let sinFac=0; lineas.forEach(l=>l.lotes.forEach(x=>{ if(!x.fac) sinFac++; }));
+        ordenes.push({ oc:r.oc, prov:r.prov||(cat?cat.prov:''), alm:r.alm||(cat?cat.alm:''),
+                       receptor:r.receptor||'', facturas:(r.facturas||[]).slice(), factura:facTxt(r), guia:r.guia||'',
+                       sinFac, fecha:r.fecha, lineas });
+      }
     });
     ordenes.sort((a,b)=> String(a.prov).localeCompare(String(b.prov)));
     DIADATA = ordenes;
@@ -1482,14 +1645,17 @@ function renderDia(){
       html += '<div class="card tight" style="margin-bottom:10px">'+
         '<div style="font-weight:800;font-size:14.5px">OC '+esc(o.oc)+' · '+esc(o.prov||'')+'</div>'+
         '<div class="meta" style="margin:7px 0 9px">'+
-          (o.factura?'<span class="tag">Factura <b>'+esc(o.factura)+'</b></span>':'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">SIN FACTURA</span>')+
+          ((o.facturas&&o.facturas.length)
+             ? o.facturas.map(f=>'<span class="tag">Factura <b>'+esc(f.num)+'</b></span>').join('')
+             : '<span class="tag" style="border-color:#6b4d15;color:#fbbf24">SIN FACTURA</span>')+
+          (o.sinFac&&o.facturas&&o.facturas.length>1?'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">'+o.sinFac+' lote(s) sin factura</span>':'')+
           (o.guia?'<span class="tag">Guía <b>'+esc(o.guia)+'</b></span>':'')+
           (o.alm?'<span class="tag">'+esc(o.alm)+'</span>':'')+
           (o.receptor?'<span class="tag">'+esc(o.receptor)+'</span>':'')+
         '</div>'+
         '<table class="rep"><thead><tr><th>Producto</th><th class="n">Recib.</th><th class="n">Cajas</th><th class="n">Dif.</th></tr></thead><tbody>'+
         o.lineas.map(l=>'<tr><td><b>'+esc(l.desc)+'</b><br><span class="dim">SKU '+esc(l.sku)+
-            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.venc?(' vence '+iso2dmy(x.venc)):'')).join(' / ') : '')+'</span></td>'+
+            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.fac?(' [F '+esc(x.fac)+']'):'')+(x.venc?(' vence '+iso2dmy(x.venc)):'')).join(' / ') : '')+'</span></td>'+
           '<td class="n">'+fmt(l.rec)+'</td><td class="n">'+(l.cajas?fmt(l.cajas):'—')+'</td>'+
           '<td class="n" style="color:'+(l.dif===0?'#6ee7a0':(l.dif<0?'#fbbf24':'#fca5a5'))+'"><b>'+(l.dif>0?'+':'')+fmt(l.dif)+'</b></td></tr>').join('')+
         '</tbody></table>'+
@@ -1505,23 +1671,38 @@ function libroDia(){
   const det=[['Fecha','OC','Proveedor','Almacen','Factura','Guia','Recepcionó','SKU','Descripcion',
               'Cantidad pedida','Recibido SAP','Pendiente','Recibido','Diferencia','Estado',
               'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos']];
-  const res=[['Fecha','OC','Proveedor','Factura','Guia','Recepcionó','Productos','Cajas','Lineas conformes','Lineas con diferencia']];
+  const res=[['Fecha','OC','Proveedor','Facturas','N° facturas','Guia','Recepcionó','Productos','Cajas','Lineas conformes','Lineas con diferencia']];
+  const pf =[['Fecha','OC','Proveedor','Factura','Productos','Cantidad','Cajas','Lotes','Tarjas']];
   (DIADATA||[]).forEach(o=>{
     let cajas=0, ok=0, dif=0;
+    const porFac={};   // factura -> totales
     o.lineas.forEach(l=>{
       cajas+=l.cajas; if(l.estado==='CONFORME') ok++; else if(l.estado!=='S/D') dif++;
-      const base=[iso2dmy(o.fecha),o.oc,o.prov,o.alm,o.factura,o.guia,o.receptor,l.sku,l.desc,
+      const base=fac=>[iso2dmy(o.fecha),o.oc,o.prov,o.alm,fac,o.guia,o.receptor,l.sku,l.desc,
                   l.cant,l.entr,l.pend,l.rec,l.dif,l.estado];
-      if(!l.lotes.length) det.push(base.concat(['','','','','','']));
-      else l.lotes.forEach(x=>det.push(base.concat([x.lote||'',num(x.cant),x.cajas===''||x.cajas==null?'':num(x.cajas),
-                                                    iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1])));
+      if(!l.lotes.length) det.push(base(o.factura).concat(['','','','','','']));
+      else l.lotes.forEach(x=>{
+        det.push(base(x.fac||'').concat([x.lote||'',num(x.cant),x.cajas===''||x.cajas==null?'':num(x.cajas),
+                                         iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1]));
+        const k=x.fac||'(SIN FACTURA)';
+        const t=porFac[k]||(porFac[k]={prod:{},cant:0,cajas:0,lotes:0,tarjas:0});
+        t.prod[l.sku]=1; t.cant+=num(x.cant); t.cajas+=num(x.cajas); t.lotes++;
+        t.tarjas+=Math.max(1,parseInt(x.bultos||1,10));
+      });
     });
-    res.push([iso2dmy(o.fecha),o.oc,o.prov,o.factura,o.guia,o.receptor,o.lineas.length,cajas,ok,dif]);
+    Object.keys(porFac).forEach(k=>{ const t=porFac[k];
+      pf.push([iso2dmy(o.fecha),o.oc,o.prov,k,Object.keys(t.prod).length,t.cant,t.cajas,t.lotes,t.tarjas]); });
+    res.push([iso2dmy(o.fecha),o.oc,o.prov,o.factura,(o.facturas||[]).length,o.guia,o.receptor,o.lineas.length,cajas,ok,dif]);
   });
   const wb=XLSX.utils.book_new();
   const wsR=XLSX.utils.aoa_to_sheet(res);
-  wsR['!cols']=[{wch:12},{wch:9},{wch:34},{wch:12},{wch:12},{wch:14},{wch:10},{wch:9},{wch:16},{wch:19}];
+  wsR['!cols']=[{wch:12},{wch:9},{wch:34},{wch:20},{wch:11},{wch:12},{wch:14},{wch:10},{wch:9},{wch:16},{wch:19}];
   XLSX.utils.book_append_sheet(wb,wsR,'Resumen');
+  if(pf.length>1){
+    const wsF=XLSX.utils.aoa_to_sheet(pf);
+    wsF['!cols']=[{wch:12},{wch:9},{wch:34},{wch:14},{wch:10},{wch:11},{wch:9},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb,wsF,'Por factura');
+  }
   const wsD=XLSX.utils.aoa_to_sheet(det);
   wsD['!cols']=[{wch:12},{wch:9},{wch:34},{wch:11},{wch:12},{wch:12},{wch:14},{wch:10},{wch:46},
                 {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
@@ -1544,12 +1725,15 @@ function textoDia(){
           (DIADATA||[]).length+' orden(es) de compra · '+nLin+' producto(s)'+(cajas?(' · '+fmt(cajas)+' cajas'):'')+'\n'+
           (dif? (dif+' línea(s) con diferencia de cantidad'):'Sin diferencias de cantidad')+'\n\n';
   (DIADATA||[]).forEach(o=>{
-    t += 'OC '+o.oc+' · '+(o.prov||'')+(o.factura?(' · Factura '+o.factura):' · SIN FACTURA')+(o.guia?(' · Guía '+o.guia):'')+'\n';
+    const nf=(o.facturas||[]).length;
+    t += 'OC '+o.oc+' · '+(o.prov||'')+
+         (nf? (' · '+(nf>1? (nf+' facturas: '):'Factura ')+o.factura) : ' · SIN FACTURA')+
+         (o.guia?(' · Guía '+o.guia):'')+'\n';
     o.lineas.forEach(l=>{
       t += '   - '+l.desc+' (SKU '+l.sku+'): recibido '+fmt(l.rec)+
            (l.cajas?(' · '+fmt(l.cajas)+' cajas'):'')+
            (Math.abs(l.dif)>0.001? ('  >>> '+(l.dif<0?'FALTAN ':'EXCESO ')+fmt(Math.abs(l.dif))) : '')+'\n';
-      l.lotes.forEach(x=>{ t += '        lote '+(x.lote||'—')+(x.venc?(' · vence '+iso2dmy(x.venc)):'')+'\n'; });
+      l.lotes.forEach(x=>{ t += '        lote '+(x.lote||'—')+(x.fac?(' · factura '+x.fac):'')+(x.venc?(' · vence '+iso2dmy(x.venc)):'')+'\n'; });
     });
     t += '\n';
   });
