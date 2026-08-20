@@ -112,6 +112,14 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .lotrow .li{flex:1;min-width:0}
 .lotrow .l1{font-weight:700;font-size:13.5px}
 .lotrow .l2{font-size:11.5px;color:var(--mut);margin-top:2px}
+.lotrow .l3{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px}
+.conttag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:800;letter-spacing:.6px;
+  color:#a5d8ff;background:#0d2137;border:1px solid #2f6ea5;border-radius:6px;padding:2px 6px}
+.contbox{display:flex;flex-wrap:wrap;gap:6px;background:#0d1526;border:1px dashed #2f6ea5;
+  border-radius:10px;padding:10px}
+.contbox.pend{color:var(--mut);font-size:12.5px;display:block;border-color:var(--line)}
+.contpill{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;font-weight:800;letter-spacing:1.2px;
+  color:#cfe9ff;background:#122b45;border:1px solid #2f6ea5;border-radius:8px;padding:5px 9px;user-select:all}
 .vencchip{font-size:11px;font-weight:800;padding:3px 7px;border-radius:7px;white-space:nowrap}
 
 /* ---------- lists ---------- */
@@ -669,8 +677,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
    RECEPCIÓN DE ÓRDENES DE COMPRA · QUINTA
    App móvil autocontenida — sin internet, sin instalación.
    ================================================================ */
-const BUILD_ID = '20260817-multifactura';
-const APP_VER  = '1.1';
+const BUILD_ID = '20260820-bodega';
+const APP_VER  = '1.2';
 
 /* ---------------- utilidades ---------------- */
 const $  = id => document.getElementById(id);
@@ -829,6 +837,190 @@ function idbDel(store,key){ return db().then(d=>new Promise((res,rej)=>{ const t
 function idbAll(store){ return db().then(d=>new Promise((res,rej)=>{ const s=d.transaction(store,'readonly').objectStore(store), out=[];
   const c=s.openCursor(); c.onsuccess=e=>{ const cur=e.target.result; if(cur){ out.push(cur.value); cur.continue(); } else res(out); };
   c.onerror=e=>rej(e); })); }
+
+/* ================================================================
+   CÓDIGO DE CONTENEDOR · MP###### correlativo, único e ineditable
+   ================================================================
+   - El correlativo vive en kv/'mpseq' y se reserva en UNA sola
+     transacción read-modify-write, así dos guardados simultáneos
+     nunca reciben el mismo número.
+   - Un código se asigna al pallet cuando se guarda el lote y NUNCA
+     se reescribe, se reutiliza ni se puede editar a mano.
+   - Si se borra un lote, sus códigos se queman (no vuelven a salir).
+================================================================ */
+const MP_PREFIJO = 'MP';
+const MP_DIGITOS = 6;
+const MP_MAX     = Math.pow(10, MP_DIGITOS) - 1;   // 999999
+
+function fmtMP(n){ return MP_PREFIJO + String(n).padStart(MP_DIGITOS,'0'); }
+function esMP(s){ return /^MP\d{6}$/.test(String(s||'')); }
+function mpNum(s){ return esMP(s)? parseInt(String(s).slice(2),10) : 0; }
+
+/* Reserva n códigos de forma atómica y devuelve el arreglo ['MP000001', …] */
+function reservarMP(n){
+  const cant = Math.max(0, parseInt(n||0,10));
+  if(!cant) return Promise.resolve([]);
+  return db().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction('kv','readwrite');
+    const st = tx.objectStore('kv');
+    const g  = st.get('mpseq');
+    let out = [];
+    g.onsuccess = ()=>{
+      let cur = parseInt(g.result||0,10);
+      if(!isFinite(cur) || cur < 0) cur = 0;
+      if(cur + cant > MP_MAX){ rej(new Error('correlativo agotado')); try{tx.abort();}catch(e){} return; }
+      for(let i=cur+1; i<=cur+cant; i++) out.push(fmtMP(i));
+      st.put(cur+cant, 'mpseq');
+    };
+    g.onerror   = e=>rej(e);
+    tx.oncomplete = ()=>res(out);
+    tx.onerror  = e=>rej(e);
+    tx.onabort  = e=>rej(e);
+  }));
+}
+
+/* Blindaje: si se restauró una base o se importaron recepciones,
+   el contador se adelanta al mayor MP ya existente. */
+function sincronizarMP(){
+  return idbAll('rec').then(recs=>{
+    let max = 0;
+    (recs||[]).forEach(r=>{ const ls=(r&&r.lineas)||{};
+      for(const k in ls) (ls[k]||[]).forEach(l=>{
+        (l && Array.isArray(l.cont)? l.cont : []).forEach(c=>{ const v=mpNum(c); if(v>max) max=v; });
+      });
+    });
+    return idbGet('kv','mpseq').then(seq=>{
+      const cur = parseInt(seq||0,10) || 0;
+      return (max > cur)? idbSet('kv','mpseq',max) : true;
+    });
+  }).catch(()=>true);
+}
+
+/* ================================================================
+   PUENTE CON BODEGA MÓVIL
+   ----------------------------------------------------------------
+   Contrato compartido por las dos apps (mismo sitio = mismo origen):
+
+   localStorage 'quinta_pallets'       ← lo escribe RECEPCIÓN
+     [{cont,sku,desc,cant,cajas,lote,venc,elab,oc,factura,prov,
+       alm,recep,receptor,bulto,bultos,ts}]
+
+   localStorage 'quinta_pallets_ubic'  ← lo escribe BODEGA MÓVIL
+     { "MP000001": {ubic:"A-B-07-3-2", ts:"ISO", user:"Eduardo"} }
+
+   Si las dos apps NO están en el mismo sitio, el mismo contenido
+   viaja en el archivo pallets_*.json (botón "Enviar a Bodega Móvil").
+================================================================ */
+const PALLET_KEY = 'quinta_pallets';
+const PALLET_UBI = 'quinta_pallets_ubic';
+const PALLET_MAX = 6000;                     // tope de la bandeja
+
+function palletsLeer(){
+  try{ const a=JSON.parse(localStorage.getItem(PALLET_KEY)||'[]'); return Array.isArray(a)?a:[]; }
+  catch(e){ return []; }
+}
+function palletsGuardar(arr){
+  try{
+    const a = arr.slice(-PALLET_MAX);
+    localStorage.setItem(PALLET_KEY, JSON.stringify(a));
+    return true;
+  }catch(e){ return false; }   // sin espacio: la recepción sigue funcionando igual
+}
+function ubicMap(){
+  try{ const m=JSON.parse(localStorage.getItem(PALLET_UBI)||'{}'); return (m&&typeof m==='object')?m:{}; }
+  catch(e){ return {}; }
+}
+function ubicDeCont(c){ const m=ubicMap()[c]; return m? (m.ubic||'') : ''; }
+
+/* Arma los pallets de la recepción abierta (uno por bulto/contenedor) */
+function palletsDeRecep(rec, ord){
+  const out=[], fmap={};
+  ((rec&&rec.facturas)||[]).forEach(f=>fmap[f.id]=f.num);
+  const lineas = (ord&&ord.lineas)||{};
+  for(const key in (rec&&rec.lineas||{})){
+    const L = lineas[key] || {};
+    (rec.lineas[key]||[]).forEach(lt=>{
+      const n = Math.max(1, parseInt(lt.bultos||1,10));
+      const cc = contDeLote(lt);
+      const cantU  = n>1 ? num(lt.cant)/n : num(lt.cant);
+      const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
+      cc.forEach((c,idx)=>{
+        if(!c) return;
+        out.push({ cont:c, sku:L.sku||'', desc:L.desc||'', cant:cantU, cajas:cajasU,
+                   lote:lt.lote||'', venc:lt.venc||'', elab:lt.elab||'',
+                   oc:rec.oc, factura:fmap[lt.fid]||'', prov:rec.prov||(ord?ord.prov:'')||'',
+                   alm:L.alm||rec.alm||(ord?ord.alm:'')||'',
+                   recep:rec.fecha||'', receptor:rec.receptor||'',
+                   bulto:idx+1, bultos:n, ts:new Date().toISOString() });
+      });
+    });
+  }
+  return out;
+}
+/* Deja la bandeja al día con lo que hoy tiene esta OC:
+   agrega los nuevos, actualiza los que cambiaron y saca los
+   contenedores de lotes borrados que todavía nadie ubicó. */
+function publicarPallets(rec, ord){
+  if(!rec || !ord) return;
+  const nuevos = palletsDeRecep(rec, ord);
+  const vivos  = {}; nuevos.forEach(p=>vivos[p.cont]=p);
+  const ubic   = ubicMap();
+  const base   = palletsLeer().filter(p=>{
+    if(String(p.oc)!==String(rec.oc)) return true;         // otras OC no se tocan
+    if(vivos[p.cont]) return false;                        // se reemplaza más abajo
+    return !!ubic[p.cont];                                 // borrado: sólo se conserva si ya está ubicado
+  });
+  palletsGuardar(base.concat(nuevos));
+}
+/* Todos los pallets conocidos, con su estado de ubicación */
+function palletsConEstado(){
+  const u = ubicMap();
+  return palletsLeer().map(p=>Object.assign({}, p, {
+    ubic: u[p.cont]? u[p.cont].ubic : '',
+    ubicTs: u[p.cont]? u[p.cont].ts : ''
+  }));
+}
+function palletsPendientes(){ return palletsConEstado().filter(p=>!p.ubic); }
+
+/* Envía los pallets a Bodega Móvil como archivo (WhatsApp, correo, Drive…) */
+/* Contenido exacto del archivo pallets_*.json */
+function palletsPayload(lista){
+  // Se manda también dónde quedó lo ya guardado: el otro teléfono no lo repite
+  const limpio = (lista||[]).map(p=>{ const q=Object.assign({},p);
+    q.ubicacion = p.ubic||''; q.ubicado_ts = p.ubicTs||'';
+    delete q.ubic; delete q.ubicTs; return q; });
+  return { tipo:'pallets-recepcion', version:1, origen:'recepcion-oc',
+           generado:new Date().toISOString(), pallets:limpio };
+}
+function enviarPallets(lista, nombre){
+  const pal = (lista&&lista.length)? lista : palletsPendientes();
+  if(!pal.length){ toast('No hay pallets pendientes por enviar'); return; }
+  const payload = palletsPayload(pal);
+  const limpio = payload.pallets;
+  const fn = nombre || ('pallets_'+hoyISO()+'.json');
+  const file = new File([JSON.stringify(payload)], fn, {type:'application/json'});
+  const txt = limpio.length+' pallet(s) de recepción para Bodega Móvil ('+hoyISO()+')';
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file], title:fn, text:txt})
+      .then(()=>toast('Pallets enviados'))
+      .catch(err=>{ if(err && err.name!=='AbortError') bajarArchivo(file); });
+  } else bajarArchivo(file);
+}
+function bajarArchivo(file){
+  const url=URL.createObjectURL(file);
+  const a=document.createElement('a'); a.href=url; a.download=file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  toast('Archivo descargado: '+file.name);
+}
+
+/* Códigos de un lote (siempre un arreglo del largo de sus bultos) */
+function contDeLote(lt){
+  const n = Math.max(1, parseInt((lt&&lt.bultos)||1,10));
+  const a = (lt && Array.isArray(lt.cont))? lt.cont : [];
+  return a.slice(0,n);
+}
+function contTxt(lt){ const a=contDeLote(lt); return a.length? a.join(' · ') : ''; }
 
 /* ---------------- estado ---------------- */
 let CAT   = null;   // {meta:{}, ordenes:{ "117882": {...} }}
@@ -1159,13 +1351,29 @@ function lotHTML(L,lt,i){
                      : (facArr().length? ' · <b style="color:#fbbf24">sin factura</b>' : '');
   return '<div class="lotrow">'+
     '<div class="li"><div class="l1">Lote '+esc(lt.lote||'—')+' · '+fmt(lt.cant)+(lt.cajas!==''&&lt.cajas!=null?(' · '+fmt(lt.cajas)+' cajas'):'')+'</div>'+
-      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+facHTML+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div></div>'+
+      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+facHTML+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div>'+
+      (contDeLote(lt).length? '<div class="l3">'+contDeLote(lt).map(c=>{
+          const u = ubicDeCont(c);
+          return '<span class="conttag"'+(u?' style="border-color:#1d5c39;color:#86efac"':'')+'>'+
+                 esc(c)+(u? (' · 📍 '+esc(u)) : '')+'</span>'; }).join('')+'</div>' : '')+
+      '</div>'+
     '<button class="mini gh" onclick="imprimirLote(\''+esc(L.key)+'\','+i+')">Tarja</button>'+
     '<button class="mini" onclick="formLote(\''+esc(L.key)+'\','+i+')">Editar</button>'+
   '</div>';
 }
 function toggleLinea(k){ ABIERTA = (ABIERTA===k? null : k); renderLineas();
   if(ABIERTA){ setTimeout(()=>{ const el=document.querySelector('.line .body'); if(el) el.scrollIntoView({block:'center',behavior:'smooth'}); },60); } }
+
+/* Caja de sólo lectura con los códigos MP del lote (no editable) */
+function contBoxHTML(lt){
+  const a = contDeLote(lt);
+  if(!a.length){
+    return '<div class="contbox pend">Se generará automáticamente al guardar '+
+           '<span class="dim">(uno por pallet)</span></div>';
+  }
+  return '<div class="contbox">'+a.map(c=>'<span class="contpill">'+esc(c)+'</span>').join('')+
+         '<div class="dim" style="margin-top:6px;width:100%">Asignado por el sistema · no se puede modificar</div></div>';
+}
 
 /* ---------- alta / edición de lote ---------- */
 function formLote(key,i){
@@ -1186,8 +1394,9 @@ function formLote(key,i){
       '<div class="full"><label class="f">Bultos / pallets (tarjas a imprimir)</label><input type="number" id="mBul" inputmode="numeric" min="1" step="1" value="'+(lt.bultos||1)+'"></div>'+
       '<div><label class="f">Vencimiento</label><input type="date" id="mVenc" value="'+esc(lt.venc||'')+'"></div>'+
       '<div><label class="f">Elaboración</label><input type="date" id="mElab" value="'+esc(lt.elab||'')+'"></div>'+
+      '<div class="full"><label class="f">Código de contenedor</label>'+contBoxHTML(lt)+'</div>'+
     '</div>'+
-    '<div class="dim" style="margin:8px 0 4px">Si el bulto trae varios pallets iguales, indica "bultos" y se imprimirá una tarja por cada uno (1/N, 2/N…).</div>'+
+    '<div class="dim" style="margin:8px 0 4px">Si el bulto trae varios pallets iguales, indica "bultos" y se imprimirá una tarja por cada uno (1/N, 2/N…), cada una con su propio código MP.</div>'+
     '<div class="btnrow" style="margin-top:12px">'+
       '<button class="btn sec" onclick="closeModal()">Cancelar</button>'+
       (i>=0?'<button class="btn danger" onclick="delLote(\''+esc(key)+'\','+i+')">Eliminar</button>':'')+
@@ -1202,13 +1411,35 @@ function saveLote(key,i){
   if(!cant){ toast('Ingresa la cantidad recibida'); return; }
   const fr = fidDesdeModal(); if(!fr.ok) return;
   if(!RECEP.lineas[key]) RECEP.lineas[key]=[];
-  const obj={lote,cant,cajas,venc,elab,bultos,fid:fr.fid||''};
-  if(i>=0) RECEP.lineas[key][i]=obj; else RECEP.lineas[key].push(obj);
-  closeModal(); saveRecep(); renderOrden();
-  const e=estado(ORD.lineas[key]);
-  if(e.st==='part') toast('Faltan '+fmt(-e.dif)+' respecto al pendiente');
-  else if(e.st==='over') toast('Exceso de '+fmt(e.dif)+' sobre el pendiente');
-  else toast('Cantidad conforme');
+
+  // Códigos de contenedor ya asignados a este lote: se conservan tal cual.
+  const previo  = i>=0 ? RECEP.lineas[key][i] : null;
+  const conserva = contDeLote(previo).slice(0, bultos);
+  const faltan  = bultos - conserva.length;   // sólo los pallets nuevos piden código
+
+  const btn = document.querySelector('.modal .btn:last-child');
+  if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  reservarMP(faltan).then(nuevos=>{
+    const cont = conserva.concat(nuevos);
+    const obj = {lote,cant,cajas,venc,elab,bultos,fid:fr.fid||'',cont:cont};
+    if(i>=0) RECEP.lineas[key][i]=obj; else RECEP.lineas[key].push(obj);
+    closeModal(); saveRecep(); renderOrden();
+    if(nuevos.length){
+      toast(nuevos.length===1 ? ('Contenedor '+nuevos[0]) : ('Contenedores '+nuevos[0]+' → '+nuevos[nuevos.length-1]));
+    }
+    const e=estado(ORD.lineas[key]);
+    setTimeout(()=>{
+      if(e.st==='part') toast('Faltan '+fmt(-e.dif)+' respecto al pendiente');
+      else if(e.st==='over') toast('Exceso de '+fmt(e.dif)+' sobre el pendiente');
+      else toast('Cantidad conforme');
+    }, nuevos.length? 900 : 0);
+  }).catch(err=>{
+    if(btn){ btn.disabled=false; btn.textContent='Guardar'; }
+    toast(String(err&&err.message)==='correlativo agotado'
+      ? 'Correlativo MP agotado: avisa a informática'
+      : 'No se pudo generar el código de contenedor. Reintenta.');
+  });
 }
 function delLote(key,i){
   RECEP.lineas[key].splice(i,1);
@@ -1220,6 +1451,7 @@ function saveRecep(silent){
   let tarjas=0; for(const k in RECEP.lineas) tarjas += RECEP.lineas[k].reduce((s,l)=>s+(l.bultos||1),0);
   RECEP.tarjas=tarjas; RECEP.mod=new Date().toISOString(); RECEP.prov=ORD.prov; RECEP.alm=ORD.alm;
   RECEP.factura = facTxt(RECEP);   // texto "123 / 456" para historial y compatibilidad
+  publicarPallets(RECEP, ORD);     // deja los contenedores a la vista de Bodega Móvil
   idbSet('rec',RECEP.oc,RECEP).then(()=>{ if(!silent) {} });
 }
 
@@ -1253,11 +1485,33 @@ function openResumen(){
       tabla(conDif)+'</div>' : '<div class="card"><div class="okbox">Sin diferencias entre lo pendiente y lo recibido en las líneas trabajadas.</div></div>')+
     (sinRec.length? '<div class="card"><h2>Pendientes sin recibir ('+sinRec.length+')</h2>'+tabla(sinRec)+'</div>':'')+
     (ok.length? '<div class="card"><h2 style="color:#6ee7a0">Conformes ('+ok.length+')</h2>'+tabla(ok)+'</div>':'')+
+    bodegaCardHTML()+
     '<div class="card"><h2>Exportar</h2>'+
       '<div class="btnrow"><button class="btn sec" onclick="exportExcel()">Excel de recepción</button>'+
       '<button class="btn sec" onclick="imprimirTodas()">Tarjas PDF</button></div>'+
       '<button class="btn danger" style="margin-top:8px" onclick="borrarRecep()">Borrar esta recepción</button></div>';
   show('resumen');
+}
+/* Tarjeta "Bodega Móvil" del resumen: qué pallets de esta OC ya tienen
+   ubicación y cuáles siguen esperando a que alguien los guarde. */
+function bodegaCardHTML(){
+  const todos = palletsConEstado().filter(p=>String(p.oc)===String(ORD.oc));
+  if(!todos.length) return '';
+  const ubicados = todos.filter(p=>p.ubic);
+  const pend     = todos.filter(p=>!p.ubic);
+  return '<div class="card"><h2>Bodega Móvil · pallets</h2>'+
+    '<div class="meta" style="margin-bottom:9px">'+
+      '<span class="tag">Contenedores <b>'+todos.length+'</b></span>'+
+      '<span class="tag" style="border-color:#1d5c39;color:#86efac">Ubicados <b>'+ubicados.length+'</b></span>'+
+      (pend.length?'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">Por ubicar <b>'+pend.length+'</b></span>':'')+
+    '</div>'+
+    (ubicados.length? '<div style="margin-bottom:9px">'+ubicados.map(p=>
+        '<span class="conttag" style="border-color:#1d5c39;color:#86efac">'+esc(p.cont)+' · 📍 '+esc(p.ubic)+'</span>').join('')+'</div>' : '')+
+    '<div class="dim" style="margin-bottom:10px">Bodega Móvil lee estos códigos sola si está en el mismo sitio. '+
+      'Si la recepción se hizo en otro teléfono, envía el archivo.</div>'+
+    '<button class="btn gh" onclick="enviarPallets(palletsConEstado().filter(p=>String(p.oc)===String(ORD.oc)),\'pallets_OC'+esc(ORD.oc)+'.json\')">'+
+      'Enviar los '+todos.length+' pallets de esta OC</button>'+
+  '</div>';
 }
 function cajasLinea(L){ let c=0; (RECEP.lineas[L.key]||[]).forEach(l=>c+=num(l.cajas));
   return c? '<br><span class="dim">'+fmt(c)+' cajas</span>':''; }
@@ -1314,8 +1568,24 @@ function showHist(){
 /* ================================================================
    7. DATOS / MANTENIMIENTO
    ================================================================ */
+function bodegaResumenHTML(){
+  const todos = palletsConEstado();
+  const pend  = todos.filter(p=>!p.ubic);
+  if(!todos.length) return '<div class="dim">Todavía no hay pallets. Se publican solos al guardar cada lote con su código MP.</div>';
+  return '<div class="dim">'+todos.length+' pallet(s) en la bandeja · <b style="color:#86efac">'+
+      (todos.length-pend.length)+' ubicados</b>'+(pend.length?(' · <b style="color:#fbbf24">'+pend.length+' por ubicar</b>'):'')+'</div>'+
+    '<button class="btn gh" style="margin-top:8px" onclick="closeModal();enviarPallets()">Enviar pallets por ubicar ('+pend.length+')</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="closeModal();enviarPallets(palletsConEstado(),\'pallets_todos.json\')">Enviar todos los pallets</button>';
+}
 function openData(){
   const m = CAT? CAT.meta : null;
+  idbGet('kv','mpseq').then(seq=>{
+    const n = parseInt(seq||0,10)||0;
+    const el = $('mpInfo');
+    if(el) el.innerHTML = n
+      ? 'Último código emitido: <b>'+fmtMP(n)+'</b> · quedan '+(MP_MAX-n).toLocaleString('es-CL')+' disponibles'
+      : 'Aún no se ha emitido ningún código. El primero será <b>'+fmtMP(1)+'</b>';
+  }).catch(()=>{});
   modal('<h3>Base de órdenes</h3>'+
     (m? '<div class="muted">Archivo: <b>'+esc(m.archivo)+'</b><br>Hoja: '+esc(m.hoja)+'<br>'+
         m.ordenes.toLocaleString('es-CL')+' órdenes · '+m.filas.toLocaleString('es-CL')+' líneas<br>'+
@@ -1327,6 +1597,12 @@ function openData(){
     (m? '<button class="btn sec" style="margin-top:8px" onclick="closeModal();buscarBasePublicada(true)">Buscar base publicada ahora</button>':'')+
     '<button class="btn sec" style="margin-top:8px" onclick="closeModal();showHist()">Ver recepciones</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="closeModal()">Cerrar</button>'+
+    '<div class="hr"></div>'+
+    '<div style="font-weight:800;font-size:13px;margin-bottom:4px">Bodega Móvil</div>'+
+    bodegaResumenHTML()+
+    '<div class="hr"></div>'+
+    '<div style="font-weight:800;font-size:13px;margin-bottom:4px">Correlativo de contenedor</div>'+
+    '<div class="dim" id="mpInfo">Consultando…</div>'+
     '<div class="dim" style="margin-top:12px">Columnas usadas: <b>No Orden</b> (OC), <b>Articulo</b> (SKU), <b>Cantidad</b> (pedido), <b>Cant. Entr</b> (recibido SAP), Descripcion, Almacen, Razon Social.</div>');
 }
 
@@ -1440,9 +1716,10 @@ function tarjasPDF(tarjas, nombre){
     doc.setFontSize(ps);
     if(plines.length===1) doc.text(plines[0], 40, 132);
     else { doc.text(plines[0], 40, 96); doc.text(plines[1], 40, 96+ps*1.05); }
-    if(t.bultos>1){
-      doc.setFontSize(15);
-      doc.text('BULTO '+t.bulto+'/'+t.bultos, 812, 43, {align:'right'});
+    const topRight = [ (t.bultos>1? ('BULTO '+t.bulto+'/'+t.bultos) : ''), (t.cont||'') ].filter(Boolean).join('  ·  ');
+    if(topRight){
+      doc.setFont('helvetica','bold'); doc.setFontSize(15);
+      doc.text(topRight, 812, 43, {align:'right'});
     }
     // fila de datos
     const hayCajas = t.cajas!=='' && t.cajas!=null && num(t.cajas)>0;
@@ -1484,16 +1761,38 @@ function tarjasPDF(tarjas, nombre){
     chip(doc,429,386,'ELABORACION');
     doc.setFontSize(27);
     doc.text(t.elab? iso2dmy(t.elab) : '—', 437, 436);
-    // código de barras
-    drawC128(doc, String(t.sku||''), 421, 462, 300, 57);
-    doc.setFont('helvetica','bold'); doc.setFontSize(17);
-    doc.text(String(t.sku||''), 421, 536, {align:'center'});
+    // ---- códigos de barras: SKU y CONTENEDOR, lado a lado ----
+    const sku  = String(t.sku||'');
+    const cont = String(t.cont||'');
+    if(cont){
+      doc.setLineWidth(1);
+      doc.line(22,448,820,448);          // separa la zona de barras
+      doc.line(22,548,820,548);          // deja el pie fuera de las celdas
+      doc.line(421,448,421,548);         // divide SKU | CONTENEDOR
+      // izquierda: SKU
+      drawC128(doc, sku, 221, 456, 330, 44);
+      doc.setFont('helvetica','bold'); doc.setFontSize(18);
+      doc.text(sku, 221, 522, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text('SKU · CODE 128', 221, 538, {align:'center'});
+      // derecha: código de contenedor
+      drawC128(doc, cont, 620, 456, 330, 44);
+      doc.setFont('helvetica','bold'); doc.setFontSize(18);
+      doc.text(cont, 620, 522, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text('CONTENEDOR · CODE 128', 620, 538, {align:'center'});
+    } else {                              // tarjas antiguas sin código asignado
+      drawC128(doc, sku, 421, 462, 300, 57);
+      doc.setFont('helvetica','bold'); doc.setFontSize(17);
+      doc.text(sku, 421, 536, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text('CODE 128 / SKU', 36, 563);
+    }
     // pie
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.text('CODE 128 / SKU', 36, 563);
     const pie = 'Bodega Quinta · Recepción OC '+t.oc+(t.factura? (' · Factura '+t.factura):'')+
-                (t.prov? (' · '+t.prov):'')+' · '+iso2dmy(t.recep);
-    doc.text(pie.length>110? pie.slice(0,107)+'…' : pie, 812, 563, {align:'right'});
+                (t.prov? (' · '+t.prov):'')+' · '+iso2dmy(t.recep)+(cont? (' · Contenedor '+cont):'');
+    doc.text(pie.length>130? pie.slice(0,127)+'…' : pie, 812, 564, {align:'right'});
   });
   const fn = nombre||('Tarjas_'+(tarjas[0]?tarjas[0].oc:'')+'.pdf');
   // en móvil: abrir en visor para compartir/imprimir; si el navegador lo bloquea, descarga
@@ -1522,9 +1821,11 @@ function tarjasDeLinea(key){
     const cantU = n>1 ? (num(lt.cant)/n) : num(lt.cant);
     const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
     const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
+    const cc = contDeLote(lt);
     for(let b=1;b<=n;b++){
       out.push({producto:L.desc, sku:L.sku, lote:lt.lote, cant:cantU, cajas:cajasU, venc:lt.venc, elab:lt.elab,
-                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:fnum, fid:lt.fid||'', bulto:b, bultos:n});
+                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:fnum, fid:lt.fid||'',
+                cont:cc[b-1]||'', bulto:b, bultos:n});
     }
   });
   return out;
@@ -1554,8 +1855,10 @@ function imprimirLote(key,i){
   const cantU = n>1? num(lt.cant)/n : num(lt.cant);
   const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
   const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
+  const cc = contDeLote(lt);
   const t=[]; for(let b=1;b<=n;b++) t.push({producto:L.desc,sku:L.sku,lote:lt.lote,cant:cantU,cajas:cajasU,venc:lt.venc,
-      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:fnum,fid:lt.fid||'',bulto:b,bultos:n});
+      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:fnum,fid:lt.fid||'',
+      cont:cc[b-1]||'',bulto:b,bultos:n});
   tarjasPDF(t, 'Tarja_OC'+ORD.oc+'_'+L.sku+'_'+(lt.lote||'').replace(/\W/g,'')+'.pdf');
 }
 function imprimirTodas(){
@@ -1655,7 +1958,8 @@ function renderDia(){
         '</div>'+
         '<table class="rep"><thead><tr><th>Producto</th><th class="n">Recib.</th><th class="n">Cajas</th><th class="n">Dif.</th></tr></thead><tbody>'+
         o.lineas.map(l=>'<tr><td><b>'+esc(l.desc)+'</b><br><span class="dim">SKU '+esc(l.sku)+
-            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.fac?(' [F '+esc(x.fac)+']'):'')+(x.venc?(' vence '+iso2dmy(x.venc)):'')).join(' / ') : '')+'</span></td>'+
+            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.fac?(' [F '+esc(x.fac)+']'):'')+(x.venc?(' vence '+iso2dmy(x.venc)):'')+
+              (contDeLote(x).length?(' · '+contDeLote(x).join(' ')):'')).join(' / ') : '')+'</span></td>'+
           '<td class="n">'+fmt(l.rec)+'</td><td class="n">'+(l.cajas?fmt(l.cajas):'—')+'</td>'+
           '<td class="n" style="color:'+(l.dif===0?'#6ee7a0':(l.dif<0?'#fbbf24':'#fca5a5'))+'"><b>'+(l.dif>0?'+':'')+fmt(l.dif)+'</b></td></tr>').join('')+
         '</tbody></table>'+
@@ -1670,7 +1974,7 @@ function renderDia(){
 function libroDia(){
   const det=[['Fecha','OC','Proveedor','Almacen','Factura','Guia','Recepcionó','SKU','Descripcion',
               'Cantidad pedida','Recibido SAP','Pendiente','Recibido','Diferencia','Estado',
-              'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos']];
+              'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos','Contenedores']];
   const res=[['Fecha','OC','Proveedor','Facturas','N° facturas','Guia','Recepcionó','Productos','Cajas','Lineas conformes','Lineas con diferencia']];
   const pf =[['Fecha','OC','Proveedor','Factura','Productos','Cantidad','Cajas','Lotes','Tarjas']];
   (DIADATA||[]).forEach(o=>{
@@ -1680,10 +1984,11 @@ function libroDia(){
       cajas+=l.cajas; if(l.estado==='CONFORME') ok++; else if(l.estado!=='S/D') dif++;
       const base=fac=>[iso2dmy(o.fecha),o.oc,o.prov,o.alm,fac,o.guia,o.receptor,l.sku,l.desc,
                   l.cant,l.entr,l.pend,l.rec,l.dif,l.estado];
-      if(!l.lotes.length) det.push(base(o.factura).concat(['','','','','','']));
+      if(!l.lotes.length) det.push(base(o.factura).concat(['','','','','','','']));
       else l.lotes.forEach(x=>{
         det.push(base(x.fac||'').concat([x.lote||'',num(x.cant),x.cajas===''||x.cajas==null?'':num(x.cajas),
-                                         iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1]));
+                                         iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1,
+                                         contDeLote(x).join(' ')]));
         const k=x.fac||'(SIN FACTURA)';
         const t=porFac[k]||(porFac[k]={prod:{},cant:0,cajas:0,lotes:0,tarjas:0});
         t.prod[l.sku]=1; t.cant+=num(x.cant); t.cajas+=num(x.cajas); t.lotes++;
@@ -1705,7 +2010,7 @@ function libroDia(){
   }
   const wsD=XLSX.utils.aoa_to_sheet(det);
   wsD['!cols']=[{wch:12},{wch:9},{wch:34},{wch:11},{wch:12},{wch:12},{wch:14},{wch:10},{wch:46},
-                {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
+                {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7},{wch:28}];
   XLSX.utils.book_append_sheet(wb,wsD,'Detalle');
   return wb;
 }
@@ -1840,6 +2145,7 @@ function buscarBasePublicada(manual){
 
 /* ---------- arranque: usa lo guardado y busca actualización ---------- */
 const NODATA_HTML = $('noData').innerHTML;
+sincronizarMP();
 idbGet('kv','catalogo').then(c=>{
   CAT = c || null;
   refreshHome();
