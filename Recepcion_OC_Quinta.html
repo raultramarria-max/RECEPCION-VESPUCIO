@@ -7,8 +7,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>Recepción OC · Quinta</title>
 <style>
 :root{
@@ -70,9 +68,8 @@ h2{font-size:14px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;lett
 /* ---------- inputs ---------- */
 label.f{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;
   font-weight:700;margin-bottom:5px}
-input[type=text],input[type=number],input[type=date],input[type=time],input[type=search],select{
-  width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);background:#101a2e;color:var(--txt);
-  color-scheme:dark}
+input[type=text],input[type=number],input[type=date],input[type=search],select{
+  width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);background:#101a2e;color:var(--txt)}
 input:focus,select:focus{outline:none;border-color:var(--acc)}
 .bigsearch{font-size:30px!important;text-align:center;font-weight:800;letter-spacing:2px;padding:18px 12px!important}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -86,14 +83,9 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .b-bad{background:var(--badbg);color:#fca5a5}
 .b-info{background:rgba(167,139,250,.15);color:#c4b5fd}
 .b-neutral{background:#26334f;color:var(--mut)}
-.b-fav{background:rgba(56,189,248,.16);color:#7dd3fc}
-.kpi.fav .v{color:var(--acc)}
-.favbox{background:rgba(56,189,248,.12);border:1px solid #2f6ea5;border-radius:11px;
-  padding:10px 12px;font-size:12.5px;color:#9fd8f5}
-.favbox b{color:#e8eef9}
 
 /* ---------- KPI ---------- */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px;margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
 .kpi .v{font-size:19px;font-weight:800;line-height:1.1}
 .kpi .l{font-size:9.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
@@ -103,7 +95,7 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .line{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
 .line.st-ok{border-left:4px solid var(--ok)}
 .line.st-part{border-left:4px solid var(--warn)}
-.line.st-over{border-left:4px solid var(--acc)}
+.line.st-over{border-left:4px solid var(--bad)}
 .line.st-none{border-left:4px solid #3b4a6b}
 .line.st-closed{border-left:4px solid #4c3d7a;opacity:.72}
 .line .hd{padding:12px 13px;cursor:pointer}
@@ -118,14 +110,6 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .lotrow .li{flex:1;min-width:0}
 .lotrow .l1{font-weight:700;font-size:13.5px}
 .lotrow .l2{font-size:11.5px;color:var(--mut);margin-top:2px}
-.lotrow .l3{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px}
-.conttag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:800;letter-spacing:.6px;
-  color:#a5d8ff;background:#0d2137;border:1px solid #2f6ea5;border-radius:6px;padding:2px 6px}
-.contbox{display:flex;flex-wrap:wrap;gap:6px;background:#0d1526;border:1px dashed #2f6ea5;
-  border-radius:10px;padding:10px}
-.contbox.pend{color:var(--mut);font-size:12.5px;display:block;border-color:var(--line)}
-.contpill{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;font-weight:800;letter-spacing:1.2px;
-  color:#cfe9ff;background:#122b45;border:1px solid #2f6ea5;border-radius:8px;padding:5px 9px;user-select:all}
 .vencchip{font-size:11px;font-weight:800;padding:3px 7px;border-radius:7px;white-space:nowrap}
 
 /* ---------- lists ---------- */
@@ -148,13 +132,6 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .sumline{max-width:900px;margin:0 auto 8px;display:flex;justify-content:space-between;
   font-size:12px;color:var(--mut);gap:8px}
 
-.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.hrow{display:flex;gap:6px;align-items:center;min-width:0}
-.hrow input[type=time]{flex:1 1 0;min-width:0;width:auto;padding:12px 6px;text-align:center}
-.hrow .mini{flex:0 0 auto;white-space:nowrap;padding:9px 10px}
-.transline{display:block;font-size:12px;font-weight:500;color:#9fb0c9;margin-top:4px;line-height:1.35;white-space:normal}
-.transline b{color:#e8eef9}
-.transfalta{color:#fbbf24}
 /* ---------- modal / toast ---------- */
 .modal{position:fixed;inset:0;z-index:60;background:#020617cc;display:flex;align-items:flex-end;justify-content:center}
 .modal .sheet{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;
@@ -690,8 +667,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
    RECEPCIÓN DE ÓRDENES DE COMPRA · QUINTA
    App móvil autocontenida — sin internet, sin instalación.
    ================================================================ */
-const BUILD_ID = '20260826-afavor';
-const APP_VER  = '1.4';
+const BUILD_ID = '20260816-2100';
+const APP_VER  = '1.0';
 
 /* ---------------- utilidades ---------------- */
 const $  = id => document.getElementById(id);
@@ -722,247 +699,6 @@ function toast(msg,ms){ const t=document.createElement('div'); t.className='toas
 function modal(html){ const h=$('modalHost'); h.innerHTML='<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">'+html+'</div></div>'; }
 function closeModal(){ $('modalHost').innerHTML=''; }
 
-/* ================================================================
-   FACTURAS MÚLTIPLES POR OC
-   Una recepción puede tener varias facturas. Cada lote se asigna
-   a una de ellas (campo lt.fid). Se mantiene RECEP.factura como
-   texto "123 / 456" para compatibilidad con lo ya guardado.
-   ================================================================ */
-function facArr(r){ const x = r||RECEP; return (x && Array.isArray(x.facturas))? x.facturas : []; }
-function facMap(r){ const m={}; facArr(r).forEach(f=>m[f.id]=f.num); return m; }
-function facNum(fid,r){ if(!fid) return ''; return facMap(r)[fid]||''; }
-function facTxt(r){ return facArr(r).map(f=>up(f.num)).filter(Boolean).join(' / '); }
-function nuevoFid(r){ const ids=facArr(r).map(f=>f.id); let n=1; while(ids.indexOf('f'+n)>=0) n++; return 'f'+n; }
-/* migra recepciones antiguas (un solo campo factura) al nuevo formato */
-function migraRecep(r){
-  if(!r) return r;
-  if(!r.lineas) r.lineas={};
-  if(!Array.isArray(r.facturas)){
-    r.facturas=[];
-    const f0=up(r.factura);
-    if(f0){ const id='f1'; r.facturas.push({id:id,num:f0});
-      for(const k in r.lineas) (r.lineas[k]||[]).forEach(l=>{ if(!l.fid) l.fid=id; }); }
-  }
-  return r;
-}
-/* totales de una factura dentro de la recepción abierta */
-function totFactura(fid){ let cant=0,cajas=0,lotes=0,bultos=0;
-  for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{
-    if((l.fid||'')===fid){ lotes++; cant+=num(l.cant); cajas+=num(l.cajas); bultos+=Math.max(1,parseInt(l.bultos||1,10)); } });
-  return {cant,cajas,lotes,bultos}; }
-function lotesSinFactura(){ let n=0; for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(!l.fid) n++; }); return n; }
-/* factura por defecto: si sólo hay una, es esa */
-function facDefault(){ const f=facArr(); return f.length===1? f[0].id : ''; }
-
-/* ================================================================
-   TRANSPORTE POR FACTURA
-   Cada factura guarda quien la trajo: conductor, RUT, patente,
-   hora de llegada y hora de salida del camion.
-   ================================================================ */
-function facObj(fid,r){ if(!fid) return null; return facArr(r).find(f=>f.id===fid)||null; }
-
-/* ---- RUT chileno ---- */
-function rutLimpio(s){ return String(s==null?'':s).replace(/[^0-9kK]/g,'').toUpperCase(); }
-function rutFmt(s){
-  const c=rutLimpio(s); if(c.length<2) return c;
-  const dv=c.slice(-1); const n=c.slice(0,-1).replace(/^0+/,'');
-  if(!n || !/^[0-9]+$/.test(n)) return c;
-  return n.replace(/\B(?=([0-9]{3})+(?![0-9]))/g,'.')+'-'+dv;
-}
-function rutValido(s){
-  const c=rutLimpio(s); if(c.length<8 || c.length>9) return false;
-  const dv=c.slice(-1), n=c.slice(0,-1);
-  if(!/^[0-9]+$/.test(n)) return false;
-  let sum=0,m=2;
-  for(let i=n.length-1;i>=0;i--){ sum+=parseInt(n.charAt(i),10)*m; m=(m===7)?2:m+1; }
-  const r=11-(sum%11);
-  return dv === (r===11?'0':(r===10?'K':String(r)));
-}
-function patLimpia(s){ return String(s==null?'':s).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8); }
-
-/* ---- horas ---- */
-function horaOK(h){ return /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(String(h||'')); }
-function horaAhora(){ const d=new Date();
-  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function minsEntre(a,b){ if(!horaOK(a)||!horaOK(b)) return null;
-  const p=x=>parseInt(x.slice(0,2),10)*60+parseInt(x.slice(3,5),10);
-  let d=p(b)-p(a); if(d<0) d+=1440; return d; }
-function durTxt(a,b){ const m=minsEntre(a,b); if(m==null) return '';
-  const h=Math.floor(m/60), r=m%60; return (h? h+' h ':'')+r+' min'; }
-
-/* ---- resumen de texto ---- */
-function transHay(f){ return !!(f && (up(f.conductor)||up(f.rut)||up(f.patente)||up(f.hllega)||up(f.hsale))); }
-function transTxt(f){
-  if(!f) return '';
-  const p=[];
-  if(up(f.conductor)) p.push(up(f.conductor));
-  if(up(f.rut))       p.push(up(f.rut));
-  if(up(f.patente))   p.push(up(f.patente));
-  if(horaOK(f.hllega)||horaOK(f.hsale)){
-    const d=durTxt(f.hllega,f.hsale);
-    p.push((up(f.hllega)||'--')+' \u2192 '+(up(f.hsale)||'--')+(d?(' ('+d+')'):''));
-  }
-  return p.join(' \u00b7 ');
-}
-function transFalta(f){
-  const q=[];
-  if(!up(f&&f.conductor)) q.push('conductor');
-  if(!up(f&&f.patente))   q.push('patente');
-  if(!horaOK(f&&f.hllega))q.push('hora de llegada');
-  if(!horaOK(f&&f.hsale)) q.push('hora de salida');
-  return q;
-}
-/* ultima factura con datos, para el boton "copiar" */
-function ultimoTrans(excl){
-  const fs=facArr().filter(f=>f.id!==excl && transHay(f));
-  return fs.length? fs[fs.length-1] : null;
-}
-
-/* ---- ayudas del formulario ---- */
-function rutInputFmt(el){ el.value = rutFmt(el.value); rutHint(); }
-function rutHint(){
-  const e=$('mFacRut'), h=$('mRutHint'); if(!e||!h) return;
-  const v=rutLimpio(e.value);
-  if(!v){ h.textContent=''; h.style.color=''; return; }
-  if(rutValido(v)){ h.textContent='RUT v\u00e1lido'; h.style.color='#6ee7a0'; }
-  else { h.textContent='El d\u00edgito verificador no cuadra'; h.style.color='#fbbf24'; }
-}
-function patInputFmt(el){ el.value = patLimpia(el.value); }
-function horaAhoraEn(id){ const e=$(id); if(!e) return; e.value=horaAhora(); durHint(); }
-function durHint(){
-  const h=$('mDurHint'); if(!h) return;
-  const a=$('mFacHL')?$('mFacHL').value:'', b=$('mFacHS')?$('mFacHS').value:'';
-  const d=durTxt(a,b);
-  if(d) h.innerHTML='Permanencia del cami\u00f3n: <b style="color:#e8eef9">'+esc(d)+'</b>';
-  else if(horaOK(a)) h.innerHTML='Lleg\u00f3 a las '+esc(a)+'. Marca la salida cuando se retire.';
-  else h.innerHTML='';
-}
-function copiarTrans(fid){
-  const src=ultimoTrans(fid||'');
-  if(!src){ toast('No hay otra factura con datos'); return; }
-  if($('mFacCond')) $('mFacCond').value = src.conductor||'';
-  if($('mFacRut'))  $('mFacRut').value  = src.rut||'';
-  if($('mFacPat'))  $('mFacPat').value  = src.patente||'';
-  if($('mFacHL'))   $('mFacHL').value   = src.hllega||'';
-  if($('mFacHS'))   $('mFacHS').value   = src.hsale||'';
-  rutHint(); durHint(); toast('Datos copiados');
-}
-
-function facChipsHTML(){
-  const fs=facArr(), sin=lotesSinFactura();
-  return '<div class="chips">'+
-    fs.map(f=>{ const t=totFactura(f.id);
-      return '<button class="chip" style="text-align:left" onclick="formFactura(\''+esc(f.id)+'\')">Factura <b>'+esc(f.num)+'</b>'+
-        '<span class="dim"> · '+(t.lotes? (t.lotes+' lote(s) · '+fmt(t.cant)) : 'sin lotes')+'</span>'+
-        (transHay(f)
-          ? '<span class="transline">\ud83d\ude9a '+esc(transTxt(f))+'</span>'
-          : '<span class="transline transfalta">\ud83d\ude9a Falta el conductor y la patente</span>')+
-        '</button>'; }).join('')+
-    '<button class="chip" style="border-color:var(--acc);color:var(--acc)" onclick="formFactura(null)">+ Agregar factura</button>'+
-  '</div>'+
-  (!fs.length? '<div class="dim" style="margin-top:7px">Si la OC llega en 2 o más facturas, agrégalas todas y en cada lote eliges cuál la trajo.</div>':'')+
-  (fs.length>1 && sin? '<div class="warnbox" style="margin-top:8px">'+sin+' lote(s) sin factura asignada. Ábrelos y elige la factura.</div>':'');
-}
-function formFactura(fid){
-  const f = fid? facArr().find(x=>x.id===fid) : null;
-  const t = f? totFactura(f.id) : null;
-  const otra = ultimoTrans(fid||'');
-  const v = k => esc(f? (f[k]||'') : '');
-  modal('<h3>'+(f?'Editar factura':'Agregar factura')+'</h3>'+
-    '<div><label class="f">N° de factura</label><input type="text" id="mFacNum" inputmode="numeric" placeholder="Ej: 128455" value="'+esc(f?f.num:'')+'"></div>'+
-    (t? '<div class="dim" style="margin-top:8px">'+t.lotes+' lote(s) asignados · '+fmt(t.cant)+(t.cajas?(' · '+fmt(t.cajas)+' cajas'):'')+'</div>':'')+
-    '<div class="hr"></div>'+
-    '<label class="f">🚚 Transporte de esta factura</label>'+
-    (otra? '<div style="margin:4px 0 9px"><button class="mini" onclick="copiarTrans(\''+esc(fid||'')+'\')">Copiar datos de la factura '+esc(otra.num)+'</button></div>' : '<div style="height:4px"></div>')+
-    '<div class="fgrid">'+
-      '<div class="full"><label class="f">Nombre del conductor</label>'+
-        '<input type="text" id="mFacCond" autocapitalize="words" autocomplete="off" placeholder="Nombre y apellido" value="'+v('conductor')+'"></div>'+
-      '<div><label class="f">RUT del conductor</label>'+
-        '<input type="text" id="mFacRut" autocomplete="off" placeholder="12.345.678-9" value="'+v('rut')+'" oninput="rutHint()" onblur="rutInputFmt(this)">'+
-        '<div class="dim" id="mRutHint" style="margin-top:4px;min-height:14px"></div></div>'+
-      '<div><label class="f">Patente del vehículo</label>'+
-        '<input type="text" id="mFacPat" autocomplete="off" placeholder="ABCD12" value="'+v('patente')+'" oninput="patInputFmt(this)"></div>'+
-      '<div><label class="f">Hora de llegada</label>'+
-        '<div class="hrow"><input type="time" id="mFacHL" value="'+v('hllega')+'" onchange="durHint()">'+
-        '<button class="mini" onclick="horaAhoraEn(\'mFacHL\')">Ahora</button></div></div>'+
-      '<div><label class="f">Hora de salida</label>'+
-        '<div class="hrow"><input type="time" id="mFacHS" value="'+v('hsale')+'" onchange="durHint()">'+
-        '<button class="mini" onclick="horaAhoraEn(\'mFacHS\')">Ahora</button></div></div>'+
-      '<div class="full dim" id="mDurHint" style="min-height:16px"></div>'+
-    '</div>'+
-    '<div class="dim" style="margin-top:8px">Cada lote que registres se asigna a una factura, así el reporte y las tarjas muestran la factura correcta.</div>'+
-    '<div class="btnrow" style="margin-top:12px">'+
-      '<button class="btn sec" onclick="closeModal()">Cancelar</button>'+
-      (f?'<button class="btn danger" onclick="delFactura(\''+esc(f.id)+'\')">Eliminar</button>':'')+
-      '<button class="btn" onclick="saveFactura('+(f? ("'"+esc(f.id)+"'") : 'null')+')">Guardar</button>'+
-    '</div>');
-  setTimeout(()=>{ const e=$('mFacNum'); if(e && !f) e.focus(); rutHint(); durHint(); },120);
-}
-function saveFactura(fid){
-  const n = up($('mFacNum').value);
-  if(!n){ toast('Ingresa el número de factura'); return; }
-  if(!Array.isArray(RECEP.facturas)) RECEP.facturas=[];
-  if(RECEP.facturas.some(f=>f.num===n && f.id!==fid)){ toast('Esa factura ya está agregada'); return; }
-  const datos = {
-    conductor: up($('mFacCond')? $('mFacCond').value : ''),
-    rut:       rutFmt($('mFacRut')? $('mFacRut').value : ''),
-    patente:   patLimpia($('mFacPat')? $('mFacPat').value : ''),
-    hllega:    up($('mFacHL')? $('mFacHL').value : ''),
-    hsale:     up($('mFacHS')? $('mFacHS').value : '')
-  };
-  if(datos.rut && !rutValido(datos.rut) &&
-     !confirm('El RUT '+datos.rut+' no pasa la validación del dígito verificador.\n¿Guardarlo igual?')) return;
-  if(datos.hllega && datos.hsale && minsEntre(datos.hllega,datos.hsale)>720 &&
-     !confirm('Entre la llegada ('+datos.hllega+') y la salida ('+datos.hsale+') hay más de 12 horas.\n¿Están bien las horas?')) return;
-  if(fid){ const f=RECEP.facturas.find(x=>x.id===fid); if(f) Object.assign(f,{num:n},datos); }
-  else{
-    const nid=nuevoFid(); RECEP.facturas.push(Object.assign({id:nid,num:n},datos));
-    if(RECEP.facturas.length===1){ // primera factura: toma los lotes que aún no tienen
-      for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(!l.fid) l.fid=nid; });
-    }
-  }
-  closeModal(); saveRecep(); refrescarVista();
-  toast(fid?'Factura actualizada':'Factura agregada');
-}
-function delFactura(fid){
-  const t=totFactura(fid);
-  if(t.lotes && !confirm('Esta factura tiene '+t.lotes+' lote(s) asignados. Quedarán sin factura. ¿Eliminar igual?')) return;
-  RECEP.facturas = facArr().filter(f=>f.id!==fid);
-  for(const k in RECEP.lineas) (RECEP.lineas[k]||[]).forEach(l=>{ if(l.fid===fid) l.fid=''; });
-  closeModal(); saveRecep(); refrescarVista(); toast('Factura eliminada');
-}
-function selFacturaHTML(sel){
-  const fs=facArr();
-  const cur = (sel!=null && sel!=='')? sel : facDefault();
-  return '<select id="mFac" onchange="onFacSel()">'+
-    '<option value=""'+(cur===''?' selected':'')+'>— sin factura —</option>'+
-    fs.map(f=>'<option value="'+esc(f.id)+'"'+(cur===f.id?' selected':'')+'>Factura '+esc(f.num)+'</option>').join('')+
-    '<option value="__new">+ Nueva factura…</option>'+
-  '</select>';
-}
-function onFacSel(){
-  const v=$('mFac').value, w=$('mFacNewWrap');
-  if(!w) return;
-  w.classList.toggle('hide', v!=='__new');
-  if(v==='__new') setTimeout(()=>{ const e=$('mFacNew'); if(e) e.focus(); },60);
-}
-/* re-dibuja la pantalla activa después de tocar facturas */
-function refrescarVista(){ renderOrden(); if(SCREEN==='resumen') openResumen(); }
-/* resuelve el fid elegido en el modal de lote (crea la factura si es nueva) */
-function fidDesdeModal(){
-  const s=$('mFac'); if(!s) return {ok:true, fid:''};
-  let fid=s.value;
-  if(fid==='__new'){
-    const n=up($('mFacNew')? $('mFacNew').value : '');
-    if(!n){ toast('Escribe el número de la nueva factura'); return {ok:false}; }
-    if(!Array.isArray(RECEP.facturas)) RECEP.facturas=[];
-    const ex=RECEP.facturas.find(f=>f.num===n);
-    if(ex) fid=ex.id;
-    else { fid=nuevoFid(); RECEP.facturas.push({id:fid,num:n}); }
-  }
-  return {ok:true, fid:fid};
-}
-
 /* ---------------- IndexedDB ---------------- */
 let DB=null;
 function db(){ return new Promise((res,rej)=>{ if(DB)return res(DB);
@@ -980,190 +716,6 @@ function idbDel(store,key){ return db().then(d=>new Promise((res,rej)=>{ const t
 function idbAll(store){ return db().then(d=>new Promise((res,rej)=>{ const s=d.transaction(store,'readonly').objectStore(store), out=[];
   const c=s.openCursor(); c.onsuccess=e=>{ const cur=e.target.result; if(cur){ out.push(cur.value); cur.continue(); } else res(out); };
   c.onerror=e=>rej(e); })); }
-
-/* ================================================================
-   CÓDIGO DE CONTENEDOR · MP###### correlativo, único e ineditable
-   ================================================================
-   - El correlativo vive en kv/'mpseq' y se reserva en UNA sola
-     transacción read-modify-write, así dos guardados simultáneos
-     nunca reciben el mismo número.
-   - Un código se asigna al pallet cuando se guarda el lote y NUNCA
-     se reescribe, se reutiliza ni se puede editar a mano.
-   - Si se borra un lote, sus códigos se queman (no vuelven a salir).
-================================================================ */
-const MP_PREFIJO = 'MP';
-const MP_DIGITOS = 6;
-const MP_MAX     = Math.pow(10, MP_DIGITOS) - 1;   // 999999
-
-function fmtMP(n){ return MP_PREFIJO + String(n).padStart(MP_DIGITOS,'0'); }
-function esMP(s){ return /^MP\d{6}$/.test(String(s||'')); }
-function mpNum(s){ return esMP(s)? parseInt(String(s).slice(2),10) : 0; }
-
-/* Reserva n códigos de forma atómica y devuelve el arreglo ['MP000001', …] */
-function reservarMP(n){
-  const cant = Math.max(0, parseInt(n||0,10));
-  if(!cant) return Promise.resolve([]);
-  return db().then(d=>new Promise((res,rej)=>{
-    const tx = d.transaction('kv','readwrite');
-    const st = tx.objectStore('kv');
-    const g  = st.get('mpseq');
-    let out = [];
-    g.onsuccess = ()=>{
-      let cur = parseInt(g.result||0,10);
-      if(!isFinite(cur) || cur < 0) cur = 0;
-      if(cur + cant > MP_MAX){ rej(new Error('correlativo agotado')); try{tx.abort();}catch(e){} return; }
-      for(let i=cur+1; i<=cur+cant; i++) out.push(fmtMP(i));
-      st.put(cur+cant, 'mpseq');
-    };
-    g.onerror   = e=>rej(e);
-    tx.oncomplete = ()=>res(out);
-    tx.onerror  = e=>rej(e);
-    tx.onabort  = e=>rej(e);
-  }));
-}
-
-/* Blindaje: si se restauró una base o se importaron recepciones,
-   el contador se adelanta al mayor MP ya existente. */
-function sincronizarMP(){
-  return idbAll('rec').then(recs=>{
-    let max = 0;
-    (recs||[]).forEach(r=>{ const ls=(r&&r.lineas)||{};
-      for(const k in ls) (ls[k]||[]).forEach(l=>{
-        (l && Array.isArray(l.cont)? l.cont : []).forEach(c=>{ const v=mpNum(c); if(v>max) max=v; });
-      });
-    });
-    return idbGet('kv','mpseq').then(seq=>{
-      const cur = parseInt(seq||0,10) || 0;
-      return (max > cur)? idbSet('kv','mpseq',max) : true;
-    });
-  }).catch(()=>true);
-}
-
-/* ================================================================
-   PUENTE CON BODEGA MÓVIL
-   ----------------------------------------------------------------
-   Contrato compartido por las dos apps (mismo sitio = mismo origen):
-
-   localStorage 'quinta_pallets'       ← lo escribe RECEPCIÓN
-     [{cont,sku,desc,cant,cajas,lote,venc,elab,oc,factura,prov,
-       alm,recep,receptor,bulto,bultos,ts}]
-
-   localStorage 'quinta_pallets_ubic'  ← lo escribe BODEGA MÓVIL
-     { "MP000001": {ubic:"A-B-07-3-2", ts:"ISO", user:"Eduardo"} }
-
-   Si las dos apps NO están en el mismo sitio, el mismo contenido
-   viaja en el archivo pallets_*.json (botón "Enviar a Bodega Móvil").
-================================================================ */
-const PALLET_KEY = 'quinta_pallets';
-const PALLET_UBI = 'quinta_pallets_ubic';
-const PALLET_MAX = 6000;                     // tope de la bandeja
-
-function palletsLeer(){
-  try{ const a=JSON.parse(localStorage.getItem(PALLET_KEY)||'[]'); return Array.isArray(a)?a:[]; }
-  catch(e){ return []; }
-}
-function palletsGuardar(arr){
-  try{
-    const a = arr.slice(-PALLET_MAX);
-    localStorage.setItem(PALLET_KEY, JSON.stringify(a));
-    return true;
-  }catch(e){ return false; }   // sin espacio: la recepción sigue funcionando igual
-}
-function ubicMap(){
-  try{ const m=JSON.parse(localStorage.getItem(PALLET_UBI)||'{}'); return (m&&typeof m==='object')?m:{}; }
-  catch(e){ return {}; }
-}
-function ubicDeCont(c){ const m=ubicMap()[c]; return m? (m.ubic||'') : ''; }
-
-/* Arma los pallets de la recepción abierta (uno por bulto/contenedor) */
-function palletsDeRecep(rec, ord){
-  const out=[], fmap={};
-  ((rec&&rec.facturas)||[]).forEach(f=>fmap[f.id]=f.num);
-  const lineas = (ord&&ord.lineas)||{};
-  for(const key in (rec&&rec.lineas||{})){
-    const L = lineas[key] || {};
-    (rec.lineas[key]||[]).forEach(lt=>{
-      const n = Math.max(1, parseInt(lt.bultos||1,10));
-      const cc = contDeLote(lt);
-      const cantU  = n>1 ? num(lt.cant)/n : num(lt.cant);
-      const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
-      cc.forEach((c,idx)=>{
-        if(!c) return;
-        out.push({ cont:c, sku:L.sku||'', desc:L.desc||'', cant:cantU, cajas:cajasU,
-                   lote:lt.lote||'', venc:lt.venc||'', elab:lt.elab||'',
-                   oc:rec.oc, factura:fmap[lt.fid]||'', prov:rec.prov||(ord?ord.prov:'')||'',
-                   alm:L.alm||rec.alm||(ord?ord.alm:'')||'',
-                   recep:rec.fecha||'', receptor:rec.receptor||'',
-                   bulto:idx+1, bultos:n, ts:new Date().toISOString() });
-      });
-    });
-  }
-  return out;
-}
-/* Deja la bandeja al día con lo que hoy tiene esta OC:
-   agrega los nuevos, actualiza los que cambiaron y saca los
-   contenedores de lotes borrados que todavía nadie ubicó. */
-function publicarPallets(rec, ord){
-  if(!rec || !ord) return;
-  const nuevos = palletsDeRecep(rec, ord);
-  const vivos  = {}; nuevos.forEach(p=>vivos[p.cont]=p);
-  const ubic   = ubicMap();
-  const base   = palletsLeer().filter(p=>{
-    if(String(p.oc)!==String(rec.oc)) return true;         // otras OC no se tocan
-    if(vivos[p.cont]) return false;                        // se reemplaza más abajo
-    return !!ubic[p.cont];                                 // borrado: sólo se conserva si ya está ubicado
-  });
-  palletsGuardar(base.concat(nuevos));
-}
-/* Todos los pallets conocidos, con su estado de ubicación */
-function palletsConEstado(){
-  const u = ubicMap();
-  return palletsLeer().map(p=>Object.assign({}, p, {
-    ubic: u[p.cont]? u[p.cont].ubic : '',
-    ubicTs: u[p.cont]? u[p.cont].ts : ''
-  }));
-}
-function palletsPendientes(){ return palletsConEstado().filter(p=>!p.ubic); }
-
-/* Envía los pallets a Bodega Móvil como archivo (WhatsApp, correo, Drive…) */
-/* Contenido exacto del archivo pallets_*.json */
-function palletsPayload(lista){
-  // Se manda también dónde quedó lo ya guardado: el otro teléfono no lo repite
-  const limpio = (lista||[]).map(p=>{ const q=Object.assign({},p);
-    q.ubicacion = p.ubic||''; q.ubicado_ts = p.ubicTs||'';
-    delete q.ubic; delete q.ubicTs; return q; });
-  return { tipo:'pallets-recepcion', version:1, origen:'recepcion-oc',
-           generado:new Date().toISOString(), pallets:limpio };
-}
-function enviarPallets(lista, nombre){
-  const pal = (lista&&lista.length)? lista : palletsPendientes();
-  if(!pal.length){ toast('No hay pallets pendientes por enviar'); return; }
-  const payload = palletsPayload(pal);
-  const limpio = payload.pallets;
-  const fn = nombre || ('pallets_'+hoyISO()+'.json');
-  const file = new File([JSON.stringify(payload)], fn, {type:'application/json'});
-  const txt = limpio.length+' pallet(s) de recepción para Bodega Móvil ('+hoyISO()+')';
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file], title:fn, text:txt})
-      .then(()=>toast('Pallets enviados'))
-      .catch(err=>{ if(err && err.name!=='AbortError') bajarArchivo(file); });
-  } else bajarArchivo(file);
-}
-function bajarArchivo(file){
-  const url=URL.createObjectURL(file);
-  const a=document.createElement('a'); a.href=url; a.download=file.name;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 60000);
-  toast('Archivo descargado: '+file.name);
-}
-
-/* Códigos de un lote (siempre un arreglo del largo de sus bultos) */
-function contDeLote(lt){
-  const n = Math.max(1, parseInt((lt&&lt.bultos)||1,10));
-  const a = (lt && Array.isArray(lt.cont))? lt.cont : [];
-  return a.slice(0,n);
-}
-function contTxt(lt){ const a=contDeLote(lt); return a.length? a.join(' · ') : ''; }
 
 /* ---------------- estado ---------------- */
 let CAT   = null;   // {meta:{}, ordenes:{ "117882": {...} }}
@@ -1264,10 +816,9 @@ function parseWB(buf, fname){
   }
   pg(80,'Guardando en el teléfono…');
   const cat = { meta:{ archivo:fname, hoja:best, cargado:new Date().toISOString(),
-                       filas:bestRows.length, ordenes:nl, build:BUILD_ID,
-                       version:'local-'+Date.now(), origen:'local' }, ordenes };
+                       filas:bestRows.length, ordenes:nl, build:BUILD_ID }, ordenes };
   idbSet('kv','catalogo',cat).then(()=>{ CAT=cat; pg(100,'Listo'); setTimeout(()=>{ closeModal();
-      toast(nl.toLocaleString('es-CL')+' órdenes cargadas'); refreshHome(); publicarPrompt(); },350);
+      toast(nl.toLocaleString('es-CL')+' órdenes cargadas'); refreshHome(); },350);
   }).catch(err=>{ closeModal(); alert('No se pudo guardar: '+err); });
 }
 
@@ -1309,10 +860,9 @@ function refreshHome(){
   $('searchCard').classList.toggle('hide', !has);
   if(has){
     const m=CAT.meta;
-    $('dbInfo').innerHTML = 'Base: <b>'+esc(m.archivo)+'</b> '+
-      (m.origen==='publicada'? '<span class="badge b-ok">PUBLICADA</span>' : '<span class="badge b-warn">SOLO EN ESTE EQUIPO</span>')+'<br>'+
-      m.ordenes.toLocaleString('es-CL')+' órdenes · '+m.filas.toLocaleString('es-CL')+' líneas · actualizada '+
-      iso2dmy((m.publicado||m.cargado).slice(0,10))+' · v'+APP_VER+'/'+BUILD_ID;
+    $('dbInfo').innerHTML = 'Base: <b>'+esc(m.archivo)+'</b><br>'+
+      m.ordenes.toLocaleString('es-CL')+' órdenes · '+m.filas.toLocaleString('es-CL')+' líneas · cargado '+
+      iso2dmy(m.cargado.slice(0,10))+' · v'+APP_VER+'/'+BUILD_ID;
   } else { $('dbInfo').textContent='Sin base cargada.'; }
   idbAll('rec').then(rs=>{
     rs.sort((a,b)=>(b.mod||'').localeCompare(a.mod||''));
@@ -1378,8 +928,8 @@ function abrirOC(oc){
   if(!o){ toast('Orden no encontrada'); return; }
   ORD = JSON.parse(JSON.stringify(o)); ORD.oc = oc;
   idbGet('rec',oc).then(r=>{
-    RECEP = r || { oc, fecha:hoyISO(), receptor:'', factura:'', facturas:[], guia:'', lineas:{}, creado:new Date().toISOString() };
-    migraRecep(RECEP);
+    RECEP = r || { oc, fecha:hoyISO(), receptor:'', factura:'', guia:'', lineas:{}, creado:new Date().toISOString() };
+    if(!RECEP.lineas) RECEP.lineas={};
     ABIERTA=null; $('filtroProd').value='';
     const hayPend = Object.values(ORD.lineas).some(L=>L.cant-L.entr>0.001);
     FILTRO = hayPend? 'pend' : 'todos';
@@ -1394,52 +944,6 @@ function estado(L){
   if(Math.abs(dif) < 0.001) return {st:'ok', dif:0, rec, pend};
   return {st: dif>0? 'over':'part', dif, rec, pend};
 }
-/* ================================================================
-   DIFERENCIA A FAVOR
-   Si llega más de lo pendiente se registra igual: no se bloquea
-   nada. La demasía queda marcada como "a favor" en pantalla, en
-   las tarjas no cambia nada y en el Excel sale en su propia
-   columna, con el motivo si se indicó.
-   ================================================================ */
-const MOT_EXCESO = ['Bonificación del proveedor','Error de despacho del proveedor',
-                    'Reposición de producto anterior','Viene facturado (revisar OC)',
-                    'Diferencia de peso del envase','Otro'];
-function favDe(e){ return (e && e.dif>0.001)? e.dif : 0; }
-function falDe(e){ return (e && e.dif<-0.001)? -e.dif : 0; }
-/* motivos anotados en los lotes de una línea, sin repetir */
-function motExcLinea(key){
-  const vis={}, out=[];
-  (RECEP.lineas[key]||[]).forEach(l=>{ const m=up(l.difmot); if(m && !vis[m]){ vis[m]=1; out.push(m); } });
-  return out.join(' / ');
-}
-function motExcLotes(lotes){
-  const vis={}, out=[];
-  (lotes||[]).forEach(l=>{ const m=up(l.difmot); if(m && !vis[m]){ vis[m]=1; out.push(m); } });
-  return out.join(' / ');
-}
-/* aviso en vivo dentro del modal de lote */
-function difHint(key,i){
-  const h=$('mDifHint'), w=$('mMotExcWrap'); if(!h) return;
-  const L=ORD.lineas[key], e=estado(L);
-  const arr=RECEP.lineas[key]||[];
-  let otros=0; arr.forEach((l,k)=>{ if(k!==i) otros+=num(l.cant); });
-  const cant=num($('mCant')? $('mCant').value : 0);
-  const dif=(otros+cant)-e.pend;
-  if(dif>0.001){
-    h.className='full favbox';
-    h.innerHTML='Llegan <b>'+fmt(dif)+'</b> más de lo pendiente. Se guarda igual y queda como <b>diferencia a favor</b> en el Excel.';
-    if(w) w.classList.remove('hide');
-  } else if(dif<-0.001){
-    h.className='full dim';
-    h.innerHTML='Quedarían '+fmt(-dif)+' pendientes en esta línea.';
-    if(w) w.classList.add('hide');
-  } else {
-    h.className='full dim';
-    h.innerHTML = cant? 'Cantidad conforme con lo pendiente.' : '';
-    if(w) w.classList.add('hide');
-  }
-}
-
 function renderOrden(){
   const ls = Object.values(ORD.lineas);
   const totPed = ls.reduce((s,L)=>s+L.cant,0);
@@ -1458,11 +962,9 @@ function renderOrden(){
     '<div class="fgrid">'+
       '<div><label class="f">Fecha recepción</label><input type="date" id="fRec" value="'+esc(RECEP.fecha||hoyISO())+'" onchange="RECEP.fecha=this.value;saveRecep(true)"></div>'+
       '<div><label class="f">Recepcionó</label><input type="text" id="fRecep" placeholder="Nombre" value="'+esc(RECEP.receptor||'')+'" oninput="RECEP.receptor=this.value" onchange="saveRecep(true)"></div>'+
-      '<div class="full"><label class="f">Guía de despacho</label><input type="text" id="fGuia" inputmode="numeric" placeholder="Guía" value="'+esc(RECEP.guia||'')+'" oninput="RECEP.guia=this.value" onchange="saveRecep(true)"></div>'+
-    '</div>'+
-    '<div class="hr"></div>'+
-    '<label class="f">Facturas de esta recepción'+(facArr().length>1? ' ('+facArr().length+')':'')+'</label>'+
-    facChipsHTML();
+      '<div><label class="f">N° Factura</label><input type="text" id="fFact" inputmode="numeric" placeholder="Factura" value="'+esc(RECEP.factura||'')+'" oninput="RECEP.factura=this.value" onchange="saveRecep(true)"></div>'+
+      '<div><label class="f">Guía de despacho</label><input type="text" id="fGuia" inputmode="numeric" placeholder="Guía" value="'+esc(RECEP.guia||'')+'" oninput="RECEP.guia=this.value" onchange="saveRecep(true)"></div>'+
+    '</div>';
   renderLineas();
 }
 function setFiltro(f){ FILTRO=f; renderLineas(); }
@@ -1470,21 +972,18 @@ function renderLineas(){
   const q=norm($('filtroProd').value);
   ['todos','pend','dif','rec'].forEach(f=>{ const b=$('fb-'+f); if(b) b.className='mini'+(FILTRO===f?' acc':''); });
   const ls = Object.values(ORD.lineas);
-  let nOK=0,nFal=0,nFav=0,nSin=0,nCer=0, recTot=0, pendTot=0, tarjas=0, favTot=0, falTot=0;
+  let nOK=0,nDif=0,nSin=0,nCer=0, recTot=0, pendTot=0, tarjas=0;
   ls.forEach(L=>{ const e=estado(L); recTot+=e.rec; pendTot+=e.pend;
-    favTot+=favDe(e); falTot+=falDe(e);
     tarjas += (RECEP.lineas[L.key]||[]).reduce((s,l)=>s+Math.max(1,parseInt(l.bultos||1,10)),0);
     if(e.st==='none') nSin++; else if(e.st==='closed') nCer++;
-    else if(e.st==='ok') nOK++; else if(e.st==='over') nFav++; else nFal++; });
+    else if(e.st==='ok') nOK++; else nDif++; });
 
   $('ordKpis').innerHTML =
     '<div class="kpi acc"><div class="v">'+ls.length+'</div><div class="l">Líneas</div></div>'+
     '<div class="kpi ok"><div class="v">'+nOK+'</div><div class="l">Conformes</div></div>'+
-    (nFav? '<div class="kpi fav"><div class="v">'+nFav+'</div><div class="l">A favor</div></div>' : '')+
-    '<div class="kpi bad"><div class="v">'+nFal+'</div><div class="l">Faltantes</div></div>'+
+    '<div class="kpi bad"><div class="v">'+nDif+'</div><div class="l">Con dif.</div></div>'+
     '<div class="kpi"><div class="v">'+nSin+'</div><div class="l">Por recibir</div></div>';
-  $('stkL').innerHTML = 'Recibido <b style="color:#e8eef9">'+fmt(recTot)+'</b> de '+fmt(pendTot)+' pendiente'+
-    (favTot? ' · <b style="color:#7dd3fc">+'+fmt(favTot)+' a favor</b>' : '');
+  $('stkL').innerHTML = 'Recibido <b style="color:#e8eef9">'+fmt(recTot)+'</b> de '+fmt(pendTot)+' pendiente';
   let cajasTot=0; Object.values(ORD.lineas).forEach(L=>(RECEP.lineas[L.key]||[]).forEach(l=>{ cajasTot += num(l.cajas); }));
   $('stkR').innerHTML = (cajasTot? (fmt(cajasTot)+' cajas · ') : '')+tarjas+' tarja(s)';
   $('btnPrintAll').textContent = tarjas? ('Imprimir '+tarjas+' tarja(s)') : 'Imprimir tarjas';
@@ -1510,7 +1009,7 @@ function lineaHTML(L){
   else if(e.st==='none') badge='<span class="badge b-neutral">POR RECIBIR</span>';
   else if(e.st==='ok') badge='<span class="badge b-ok">CONFORME</span>';
   else if(e.st==='part') badge='<span class="badge b-warn">FALTAN '+fmt(-e.dif)+'</span>';
-  else badge='<span class="badge b-fav">A FAVOR +'+fmt(e.dif)+'</span>';
+  else badge='<span class="badge b-bad">EXCESO '+fmt(e.dif)+'</span>';
   return '<div class="line st-'+e.st+'">'+
     '<div class="hd" onclick="toggleLinea(\''+esc(L.key)+'\')">'+
       '<div class="nm">'+esc(L.desc||'(sin descripción)')+'</div>'+
@@ -1538,17 +1037,9 @@ function lotHTML(L,lt,i){
   if(lt.venc){ txt = 'Vence '+iso2dmy(lt.venc);
     if(d!=null){ if(d<0){cls='b-bad'; txt+=' (VENCIDO)';} else if(d<=30){cls='b-warn'; txt+=' ('+d+' d)';} else {cls='b-ok';} } }
   else { cls='b-neutral'; txt='Sin vencimiento'; }
-  const fn = facNum(lt.fid);
-  const facHTML = fn ? ' · Fact '+esc(fn)
-                     : (facArr().length? ' · <b style="color:#fbbf24">sin factura</b>' : '');
   return '<div class="lotrow">'+
     '<div class="li"><div class="l1">Lote '+esc(lt.lote||'—')+' · '+fmt(lt.cant)+(lt.cajas!==''&&lt.cajas!=null?(' · '+fmt(lt.cajas)+' cajas'):'')+'</div>'+
-      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+facHTML+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div>'+
-      (contDeLote(lt).length? '<div class="l3">'+contDeLote(lt).map(c=>{
-          const u = ubicDeCont(c);
-          return '<span class="conttag"'+(u?' style="border-color:#1d5c39;color:#86efac"':'')+'>'+
-                 esc(c)+(u? (' · 📍 '+esc(u)) : '')+'</span>'; }).join('')+'</div>' : '')+
-      '</div>'+
+      '<div class="l2"><span class="vencchip '+cls+'">'+esc(txt)+'</span>'+(lt.elab?(' · elab '+iso2dmy(lt.elab)):'')+(lt.bultos>1?(' · '+lt.bultos+' bultos'):'')+'</div></div>'+
     '<button class="mini gh" onclick="imprimirLote(\''+esc(L.key)+'\','+i+')">Tarja</button>'+
     '<button class="mini" onclick="formLote(\''+esc(L.key)+'\','+i+')">Editar</button>'+
   '</div>';
@@ -1556,99 +1047,55 @@ function lotHTML(L,lt,i){
 function toggleLinea(k){ ABIERTA = (ABIERTA===k? null : k); renderLineas();
   if(ABIERTA){ setTimeout(()=>{ const el=document.querySelector('.line .body'); if(el) el.scrollIntoView({block:'center',behavior:'smooth'}); },60); } }
 
-/* Caja de sólo lectura con los códigos MP del lote (no editable) */
-function contBoxHTML(lt){
-  const a = contDeLote(lt);
-  if(!a.length){
-    return '<div class="contbox pend">Se generará automáticamente al guardar '+
-           '<span class="dim">(uno por pallet)</span></div>';
-  }
-  return '<div class="contbox">'+a.map(c=>'<span class="contpill">'+esc(c)+'</span>').join('')+
-         '<div class="dim" style="margin-top:6px;width:100%">Asignado por el sistema · no se puede modificar</div></div>';
-}
-
 /* ---------- alta / edición de lote ---------- */
 function formLote(key,i){
   const L = ORD.lineas[key];
   const arr = RECEP.lineas[key]||[];
-  const lt = i>=0 ? arr[i] : {lote:'',cant:'',cajas:'',venc:'',elab:'',bultos:1,fid:facDefault()};
+  const lt = i>=0 ? arr[i] : {lote:'',cant:'',cajas:'',venc:'',elab:'',bultos:1};
   const e = estado(L);
   const sugerido = i>=0? lt.cant : Math.max(0, e.pend - e.rec);
   modal(
     '<h3>'+(i>=0?'Editar lote':'Nuevo lote')+'</h3>'+
     '<div class="muted" style="margin:-6px 0 12px">'+esc(L.desc)+'<br>SKU '+esc(L.sku)+' · pendiente '+fmt(e.pend)+'</div>'+
     '<div class="fgrid">'+
-      '<div class="full"><label class="f">Factura que trajo este lote</label>'+selFacturaHTML(lt.fid)+'</div>'+
-      '<div class="full hide" id="mFacNewWrap"><label class="f">N° de la nueva factura</label><input type="text" id="mFacNew" inputmode="numeric" placeholder="Ej: 128455"></div>'+
       '<div class="full"><label class="f">Lote</label><input type="text" id="mLote" value="'+esc(lt.lote)+'" placeholder="LT0000" autocapitalize="characters"></div>'+
-      '<div><label class="f">Cantidad recibida</label><input type="number" id="mCant" inputmode="decimal" step="any" value="'+(sugerido||'')+'" oninput="difHint(\''+esc(key)+'\','+i+')"></div>'+
+      '<div><label class="f">Cantidad recibida</label><input type="number" id="mCant" inputmode="decimal" step="any" value="'+(sugerido||'')+'"></div>'+
       '<div><label class="f">Cajas</label><input type="number" id="mCaj" inputmode="numeric" min="0" step="1" placeholder="0" value="'+(lt.cajas!=null&&lt.cajas!==''?lt.cajas:'')+'"></div>'+
       '<div class="full"><label class="f">Bultos / pallets (tarjas a imprimir)</label><input type="number" id="mBul" inputmode="numeric" min="1" step="1" value="'+(lt.bultos||1)+'"></div>'+
       '<div><label class="f">Vencimiento</label><input type="date" id="mVenc" value="'+esc(lt.venc||'')+'"></div>'+
       '<div><label class="f">Elaboración</label><input type="date" id="mElab" value="'+esc(lt.elab||'')+'"></div>'+
-      '<div class="full" id="mDifHint" style="min-height:2px"></div>'+
-      '<div class="full hide" id="mMotExcWrap"><label class="f">Motivo del excedente (opcional)</label>'+
-        '<input type="text" id="mMotExc" list="motExcList" autocomplete="off" placeholder="Ej: bonificación del proveedor" value="'+esc(lt.difmot||'')+'">'+
-        '<datalist id="motExcList">'+MOT_EXCESO.map(m=>'<option value="'+esc(m)+'"></option>').join('')+'</datalist></div>'+
-      '<div class="full"><label class="f">Código de contenedor</label>'+contBoxHTML(lt)+'</div>'+
     '</div>'+
-    '<div class="dim" style="margin:8px 0 4px">Si el bulto trae varios pallets iguales, indica "bultos" y se imprimirá una tarja por cada uno (1/N, 2/N…), cada una con su propio código MP.</div>'+
+    '<div class="dim" style="margin:8px 0 4px">Si el bulto trae varios pallets iguales, indica "bultos" y se imprimirá una tarja por cada uno (1/N, 2/N…).</div>'+
     '<div class="btnrow" style="margin-top:12px">'+
       '<button class="btn sec" onclick="closeModal()">Cancelar</button>'+
       (i>=0?'<button class="btn danger" onclick="delLote(\''+esc(key)+'\','+i+')">Eliminar</button>':'')+
       '<button class="btn" onclick="saveLote(\''+esc(key)+'\','+i+')">Guardar</button>'+
     '</div>');
-  setTimeout(()=>{ const f=$('mLote'); if(f&&i<0) f.focus(); difHint(key,i); },120);
+  setTimeout(()=>{ const f=$('mLote'); if(f&&i<0) f.focus(); },120);
 }
 function saveLote(key,i){
   const lote=up($('mLote').value).toUpperCase(), cant=num($('mCant').value),
         venc=$('mVenc').value, elab=$('mElab').value, bultos=Math.max(1,parseInt($('mBul').value||'1',10)),
         cajas=$('mCaj').value===''? '' : Math.max(0,num($('mCaj').value));
   if(!cant){ toast('Ingresa la cantidad recibida'); return; }
-  const fr = fidDesdeModal(); if(!fr.ok) return;
   if(!RECEP.lineas[key]) RECEP.lineas[key]=[];
-
-  // Códigos de contenedor ya asignados a este lote: se conservan tal cual.
-  const previo  = i>=0 ? RECEP.lineas[key][i] : null;
-  const conserva = contDeLote(previo).slice(0, bultos);
-  const faltan  = bultos - conserva.length;   // sólo los pallets nuevos piden código
-
-  const btn = document.querySelector('.modal .btn:last-child');
-  if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
-
-  reservarMP(faltan).then(nuevos=>{
-    const cont = conserva.concat(nuevos);
-    const difmot = up($('mMotExc')? $('mMotExc').value : (previo? previo.difmot : ''));
-    const obj = {lote,cant,cajas,venc,elab,bultos,fid:fr.fid||'',cont:cont,difmot:difmot};
-    if(i>=0) RECEP.lineas[key][i]=obj; else RECEP.lineas[key].push(obj);
-    closeModal(); saveRecep(); renderOrden();
-    if(nuevos.length){
-      toast(nuevos.length===1 ? ('Contenedor '+nuevos[0]) : ('Contenedores '+nuevos[0]+' → '+nuevos[nuevos.length-1]));
-    }
-    const e=estado(ORD.lineas[key]);
-    setTimeout(()=>{
-      if(e.st==='part') toast('Faltan '+fmt(-e.dif)+' respecto al pendiente');
-      else if(e.st==='over') toast('Guardado · diferencia a favor +'+fmt(e.dif));
-      else toast('Cantidad conforme');
-    }, nuevos.length? 900 : 0);
-  }).catch(err=>{
-    if(btn){ btn.disabled=false; btn.textContent='Guardar'; }
-    toast(String(err&&err.message)==='correlativo agotado'
-      ? 'Correlativo MP agotado: avisa a informática'
-      : 'No se pudo generar el código de contenedor. Reintenta.');
-  });
+  const obj={lote,cant,cajas,venc,elab,bultos};
+  if(i>=0) RECEP.lineas[key][i]=obj; else RECEP.lineas[key].push(obj);
+  closeModal(); saveRecep(); renderLineas();
+  const e=estado(ORD.lineas[key]);
+  if(e.st==='part') toast('Faltan '+fmt(-e.dif)+' respecto al pendiente');
+  else if(e.st==='over') toast('Exceso de '+fmt(e.dif)+' sobre el pendiente');
+  else toast('Cantidad conforme');
 }
 function delLote(key,i){
   RECEP.lineas[key].splice(i,1);
   if(!RECEP.lineas[key].length) delete RECEP.lineas[key];
-  closeModal(); saveRecep(); renderOrden();
+  closeModal(); saveRecep(); renderLineas();
 }
 function saveRecep(silent){
   if(!RECEP) return;
   let tarjas=0; for(const k in RECEP.lineas) tarjas += RECEP.lineas[k].reduce((s,l)=>s+(l.bultos||1),0);
   RECEP.tarjas=tarjas; RECEP.mod=new Date().toISOString(); RECEP.prov=ORD.prov; RECEP.alm=ORD.alm;
-  RECEP.factura = facTxt(RECEP);   // texto "123 / 456" para historial y compatibilidad
-  publicarPallets(RECEP, ORD);     // deja los contenedores a la vista de Bodega Móvil
   idbSet('rec',RECEP.oc,RECEP).then(()=>{ if(!silent) {} });
 }
 
@@ -1658,124 +1105,53 @@ function saveRecep(silent){
 function openResumen(){
   const ls=Object.values(ORD.lineas);
   const rows = ls.map(L=>({L,e:estado(L)}));
-  const conFav   = rows.filter(r=>r.e.st==='over');
-  const conFalta = rows.filter(r=>r.e.st==='part');
-  const totFav   = conFav.reduce((s,r)=>s+favDe(r.e),0);
-  const totFalta = conFalta.reduce((s,r)=>s+falDe(r.e),0);
+  const conDif = rows.filter(r=>r.e.st==='part'||r.e.st==='over');
   const sinRec = rows.filter(r=>r.e.st==='none');
   const ok = rows.filter(r=>r.e.st==='ok');
-  const fs=facArr(), sinFac=lotesSinFactura();
-  const facsTxt = facTxt(RECEP);
   $('resContent').innerHTML =
     '<div class="card tight"><div style="font-weight:800">OC '+esc(ORD.oc)+' · '+esc(ORD.prov)+'</div>'+
       '<div class="dim" style="margin-top:4px">Recepción '+iso2dmy(RECEP.fecha)+(RECEP.receptor?(' · '+esc(RECEP.receptor)):'')+
-        (facsTxt?(' · '+(fs.length>1?'Facturas ':'Factura ')+esc(facsTxt)):'')+(RECEP.guia?(' · Guía '+esc(RECEP.guia)):'')+'</div></div>'+
-    (fs.length? '<div class="card"><h2>Documentos ('+fs.length+')</h2>'+
-      fs.map(f=>{ const t=totFactura(f.id);
-        return '<div class="lotrow"><div class="li">'+
-          '<div class="l1">Factura '+esc(f.num)+'</div>'+
-          '<div class="l2">'+t.lotes+' lote(s) · '+fmt(t.cant)+(t.cajas?(' · '+fmt(t.cajas)+' cajas'):'')+' · '+t.bultos+' tarja(s)</div>'+
-          (transHay(f)? '<div class="transline">🚚 '+esc(transTxt(f))+'</div>' : '')+
-          (transFalta(f).length? '<div class="transline transfalta">🚚 Falta: '+esc(transFalta(f).join(', '))+'</div>' : '')+
-          '</div>'+
-          (t.bultos? '<button class="mini gh" onclick="imprimirFactura(\''+esc(f.id)+'\')">Tarjas</button>':'')+
-          '<button class="mini" onclick="formFactura(\''+esc(f.id)+'\')">Editar</button></div>'; }).join('')+
-      (sinFac? '<div class="warnbox" style="margin-top:10px">'+sinFac+' lote(s) sin factura asignada.</div>':'')+
-      '<button class="btn gh" style="margin-top:10px" onclick="formFactura(null)">+ Agregar otra factura</button></div>'
-     : '<div class="card"><div class="warnbox">Esta recepción no tiene factura registrada.</div>'+
-       '<button class="btn gh" style="margin-top:10px" onclick="formFactura(null)">+ Agregar factura</button></div>')+
-    (conFav.length? '<div class="card"><h2 style="color:#7dd3fc">Diferencia a favor ('+conFav.length+')</h2>'+
-      '<div class="favbox" style="margin-bottom:10px">Llegó más de lo pendiente en estas líneas. Total a favor <b>'+fmt(totFav)+'</b>'+
-      (motExcLineas(conFav)? ' · '+esc(motExcLineas(conFav)) : '')+'. Va en el Excel en la columna <b>A favor</b>.</div>'+
-      tabla(conFav)+'</div>' : '')+
-    (conFalta.length? '<div class="card"><h2 style="color:#fbbf24">Faltantes ('+conFalta.length+')</h2>'+
-      '<div class="warnbox" style="margin-bottom:10px">Falta por recibir <b>'+fmt(totFalta)+'</b> en estas líneas.</div>'+
-      tabla(conFalta)+'</div>' : '')+
-    ((!conFav.length && !conFalta.length)? '<div class="card"><div class="okbox">Sin diferencias entre lo pendiente y lo recibido en las líneas trabajadas.</div></div>' : '')+
+        (RECEP.factura?(' · Factura '+esc(RECEP.factura)):'')+(RECEP.guia?(' · Guía '+esc(RECEP.guia)):'')+'</div></div>'+
+    (conDif.length? '<div class="card"><h2 style="color:#fca5a5">Diferencias detectadas ('+conDif.length+')</h2>'+
+      tabla(conDif)+'</div>' : '<div class="card"><div class="okbox">Sin diferencias entre lo pendiente y lo recibido en las líneas trabajadas.</div></div>')+
     (sinRec.length? '<div class="card"><h2>Pendientes sin recibir ('+sinRec.length+')</h2>'+tabla(sinRec)+'</div>':'')+
     (ok.length? '<div class="card"><h2 style="color:#6ee7a0">Conformes ('+ok.length+')</h2>'+tabla(ok)+'</div>':'')+
-    bodegaCardHTML()+
     '<div class="card"><h2>Exportar</h2>'+
       '<div class="btnrow"><button class="btn sec" onclick="exportExcel()">Excel de recepción</button>'+
       '<button class="btn sec" onclick="imprimirTodas()">Tarjas PDF</button></div>'+
       '<button class="btn danger" style="margin-top:8px" onclick="borrarRecep()">Borrar esta recepción</button></div>';
   show('resumen');
 }
-/* Tarjeta "Bodega Móvil" del resumen: qué pallets de esta OC ya tienen
-   ubicación y cuáles siguen esperando a que alguien los guarde. */
-function bodegaCardHTML(){
-  const todos = palletsConEstado().filter(p=>String(p.oc)===String(ORD.oc));
-  if(!todos.length) return '';
-  const ubicados = todos.filter(p=>p.ubic);
-  const pend     = todos.filter(p=>!p.ubic);
-  return '<div class="card"><h2>Bodega Móvil · pallets</h2>'+
-    '<div class="meta" style="margin-bottom:9px">'+
-      '<span class="tag">Contenedores <b>'+todos.length+'</b></span>'+
-      '<span class="tag" style="border-color:#1d5c39;color:#86efac">Ubicados <b>'+ubicados.length+'</b></span>'+
-      (pend.length?'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">Por ubicar <b>'+pend.length+'</b></span>':'')+
-    '</div>'+
-    (ubicados.length? '<div style="margin-bottom:9px">'+ubicados.map(p=>
-        '<span class="conttag" style="border-color:#1d5c39;color:#86efac">'+esc(p.cont)+' · 📍 '+esc(p.ubic)+'</span>').join('')+'</div>' : '')+
-    '<div class="dim" style="margin-bottom:10px">Bodega Móvil lee estos códigos sola si está en el mismo sitio. '+
-      'Si la recepción se hizo en otro teléfono, envía el archivo.</div>'+
-    '<button class="btn gh" onclick="enviarPallets(palletsConEstado().filter(p=>String(p.oc)===String(ORD.oc)),\'pallets_OC'+esc(ORD.oc)+'.json\')">'+
-      'Enviar los '+todos.length+' pallets de esta OC</button>'+
-  '</div>';
-}
 function cajasLinea(L){ let c=0; (RECEP.lineas[L.key]||[]).forEach(l=>c+=num(l.cajas));
   return c? '<br><span class="dim">'+fmt(c)+' cajas</span>':''; }
-/* motivos de excedente de un grupo de líneas, sin repetir */
-function motExcLineas(rows){
-  const vis={}, out=[];
-  (rows||[]).forEach(r=>{ const m=motExcLinea(r.L.key);
-    m.split(' / ').forEach(x=>{ if(x && !vis[x]){ vis[x]=1; out.push(x); } }); });
-  return out.join(' / ');
-}
 function tabla(rows){
   return '<table class="rep"><thead><tr><th>Producto</th><th class="n">Ped.</th><th class="n">SAP</th><th class="n">Pend.</th><th class="n">Recib.</th><th class="n">Dif.</th></tr></thead><tbody>'+
     rows.map(({L,e})=>'<tr><td><b>'+esc(L.desc)+'</b><br><span class="dim">SKU '+esc(L.sku)+
-      ((RECEP.lineas[L.key]||[]).length? ' · lotes '+RECEP.lineas[L.key].map(l=>esc(l.lote||'—')+(facNum(l.fid)?(' (F '+esc(facNum(l.fid))+')'):'')).join(', ') : '')+'</span></td>'+
+      ((RECEP.lineas[L.key]||[]).length? ' · lotes '+RECEP.lineas[L.key].map(l=>esc(l.lote||'—')).join(', ') : '')+'</span></td>'+
       '<td class="n">'+fmt(L.cant)+'</td><td class="n">'+fmt(L.entr)+'</td><td class="n">'+fmt(e.pend)+'</td>'+
-      '<td class="n">'+fmt(e.rec)+cajasLinea(L)+'</td><td class="n" style="color:'+(e.dif===0?'#6ee7a0':(e.dif<0?'#fbbf24':'#7dd3fc'))+'"><b>'+(e.dif>0?'+':'')+fmt(e.dif)+'</b>'+
-      (e.dif>0.001? '<br><span class="dim">a favor</span>':'')+'</td></tr>').join('')+
+      '<td class="n">'+fmt(e.rec)+cajasLinea(L)+'</td><td class="n" style="color:'+(e.dif===0?'#6ee7a0':(e.dif<0?'#fbbf24':'#fca5a5'))+'"><b>'+(e.dif>0?'+':'')+fmt(e.dif)+'</b></td></tr>').join('')+
     '</tbody></table>';
 }
 function exportExcel(){
-  const out=[['OC','Proveedor','Almacen','Fecha recepcion','Receptor','Factura','Guia',
-              'Conductor','RUT conductor','Patente','Hora llegada','Hora salida','Permanencia',
-              'SKU','Descripcion','Linea',
-              'Cantidad pedida','Recibido SAP','Pendiente','Recibido ahora','Diferencia',
-              'A favor','Faltante','Motivo excedente','Estado',
-              'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos']];
-  const fs=facArr();
+  const out=[['OC','Proveedor','Almacen','Fecha recepcion','Receptor','Factura','Guia','SKU','Descripcion','Linea',
+              'Cantidad pedida','Recibido SAP','Pendiente','Recibido ahora','Diferencia','Estado','Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos']];
   Object.values(ORD.lineas).forEach(L=>{
     const e=estado(L), lotes=RECEP.lineas[L.key]||[];
     const estTxt = e.st==='ok'?'CONFORME':e.st==='part'?'FALTANTE':e.st==='over'?'EXCESO':
                    e.st==='closed'?'CERRADA EN SAP':'POR RECIBIR';
-    const fav=favDe(e), fal=falDe(e);
-    const base=(fac,fo,mot)=>[ORD.oc,ORD.prov,L.alm||ORD.alm,iso2dmy(RECEP.fecha),RECEP.receptor||'',fac,RECEP.guia||'',
-                fo?up(fo.conductor):'', fo?up(fo.rut):'', fo?up(fo.patente):'',
-                fo?up(fo.hllega):'', fo?up(fo.hsale):'', fo?durTxt(fo.hllega,fo.hsale):'',
-                L.sku,L.desc,L.linea,
-                L.cant,L.entr,e.pend,e.rec,e.dif,
-                fav||'', fal||'', mot||'', estTxt];
-    if(!lotes.length) out.push(base(facTxt(RECEP), fs.length===1?fs[0]:null, motExcLinea(L.key)).concat(['','','','','','']));
-    else lotes.forEach(lt=>out.push(base(facNum(lt.fid), facObj(lt.fid), up(lt.difmot)).concat(
-      [lt.lote,lt.cant,lt.cajas===''?'':num(lt.cajas),iso2dmy(lt.venc),iso2dmy(lt.elab),lt.bultos||1])));
+    const base=[ORD.oc,ORD.prov,L.alm||ORD.alm,iso2dmy(RECEP.fecha),RECEP.receptor||'',RECEP.factura||'',RECEP.guia||'',L.sku,L.desc,L.linea,
+                L.cant,L.entr,e.pend,e.rec,e.dif,estTxt];
+    if(!lotes.length) out.push(base.concat(['','','','','','']));
+    else lotes.forEach(lt=>out.push(base.concat([lt.lote,lt.cant,lt.cajas===''?'':num(lt.cajas),iso2dmy(lt.venc),iso2dmy(lt.elab),lt.bultos||1])));
   });
   const ws=XLSX.utils.aoa_to_sheet(out);
-  ws['!cols']=[{wch:9},{wch:30},{wch:11},{wch:12},{wch:14},{wch:12},{wch:12},
-               {wch:24},{wch:14},{wch:9},{wch:12},{wch:12},{wch:13},
-               {wch:10},{wch:46},{wch:6},
-               {wch:12},{wch:12},{wch:11},{wch:13},{wch:11},
-               {wch:10},{wch:10},{wch:28},{wch:13},
-               {wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
+  ws['!cols']=[{wch:9},{wch:30},{wch:11},{wch:12},{wch:14},{wch:12},{wch:12},{wch:10},{wch:46},{wch:6},{wch:12},{wch:12},{wch:11},{wch:13},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Recepcion');
   XLSX.writeFile(wb,'Recepcion_OC'+ORD.oc+'_'+RECEP.fecha+'.xlsx');
 }
 function borrarRecep(){
   if(!confirm('¿Borrar la recepción registrada de la OC '+ORD.oc+'?')) return;
-  idbDel('rec',ORD.oc).then(()=>{ RECEP={oc:ORD.oc,fecha:hoyISO(),receptor:'',factura:'',facturas:[],guia:'',lineas:{}};
+  idbDel('rec',ORD.oc).then(()=>{ RECEP={oc:ORD.oc,fecha:hoyISO(),receptor:'',factura:'',guia:'',lineas:{}};
     toast('Recepción borrada'); show('orden'); renderOrden(); });
 }
 
@@ -1786,12 +1162,10 @@ function showHist(){
   idbAll('rec').then(rs=>{
     rs.sort((a,b)=>(b.mod||'').localeCompare(a.mod||''));
     $('histList').innerHTML = rs.length? rs.map(r=>{
-      migraRecep(r);
       let n=0; for(const k in r.lineas) n+=r.lineas[k].length;
-      const ft=facTxt(r), nf=facArr(r).length;
       return '<div class="item" onclick="abrirOC(\''+esc(r.oc)+'\')"><div class="g">'+
         '<div class="t">OC '+esc(r.oc)+' · '+esc(r.prov||'')+'</div>'+
-        '<div class="s">'+iso2dmy(r.fecha)+' · '+n+' lote(s) · '+(r.tarjas||0)+' tarja(s)'+(ft?(' · '+(nf>1?'Facts ':'Fact ')+esc(ft)):'')+(r.receptor?(' · '+esc(r.receptor)):'')+'</div>'+
+        '<div class="s">'+iso2dmy(r.fecha)+' · '+n+' lote(s) · '+(r.tarjas||0)+' tarja(s)'+(r.factura?(' · Fact '+esc(r.factura)):'')+(r.receptor?(' · '+esc(r.receptor)):'')+'</div>'+
         '</div><div class="chevron">›</div></div>';
     }).join('') : '<div class="empty"><div class="ic">📄</div>Todavía no hay recepciones guardadas</div>';
     show('hist');
@@ -1801,24 +1175,8 @@ function showHist(){
 /* ================================================================
    7. DATOS / MANTENIMIENTO
    ================================================================ */
-function bodegaResumenHTML(){
-  const todos = palletsConEstado();
-  const pend  = todos.filter(p=>!p.ubic);
-  if(!todos.length) return '<div class="dim">Todavía no hay pallets. Se publican solos al guardar cada lote con su código MP.</div>';
-  return '<div class="dim">'+todos.length+' pallet(s) en la bandeja · <b style="color:#86efac">'+
-      (todos.length-pend.length)+' ubicados</b>'+(pend.length?(' · <b style="color:#fbbf24">'+pend.length+' por ubicar</b>'):'')+'</div>'+
-    '<button class="btn gh" style="margin-top:8px" onclick="closeModal();enviarPallets()">Enviar pallets por ubicar ('+pend.length+')</button>'+
-    '<button class="btn sec" style="margin-top:8px" onclick="closeModal();enviarPallets(palletsConEstado(),\'pallets_todos.json\')">Enviar todos los pallets</button>';
-}
 function openData(){
   const m = CAT? CAT.meta : null;
-  idbGet('kv','mpseq').then(seq=>{
-    const n = parseInt(seq||0,10)||0;
-    const el = $('mpInfo');
-    if(el) el.innerHTML = n
-      ? 'Último código emitido: <b>'+fmtMP(n)+'</b> · quedan '+(MP_MAX-n).toLocaleString('es-CL')+' disponibles'
-      : 'Aún no se ha emitido ningún código. El primero será <b>'+fmtMP(1)+'</b>';
-  }).catch(()=>{});
   modal('<h3>Base de órdenes</h3>'+
     (m? '<div class="muted">Archivo: <b>'+esc(m.archivo)+'</b><br>Hoja: '+esc(m.hoja)+'<br>'+
         m.ordenes.toLocaleString('es-CL')+' órdenes · '+m.filas.toLocaleString('es-CL')+' líneas<br>'+
@@ -1826,23 +1184,16 @@ function openData(){
       : '<div class="muted">No hay base cargada.</div>')+
     '<div class="hr"></div>'+
     '<button class="btn" onclick="closeModal();pickFile()">'+(m?'Actualizar Excel':'Cargar Excel')+'</button>'+
-    (m? '<button class="btn gh" style="margin-top:8px" onclick="closeModal();publicarPrompt()">Publicar base para el equipo</button>':'')+
-    (m? '<button class="btn sec" style="margin-top:8px" onclick="closeModal();buscarBasePublicada(true)">Buscar base publicada ahora</button>':'')+
     '<button class="btn sec" style="margin-top:8px" onclick="closeModal();showHist()">Ver recepciones</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="closeModal()">Cerrar</button>'+
-    '<div class="hr"></div>'+
-    '<div style="font-weight:800;font-size:13px;margin-bottom:4px">Bodega Móvil</div>'+
-    bodegaResumenHTML()+
-    '<div class="hr"></div>'+
-    '<div style="font-weight:800;font-size:13px;margin-bottom:4px">Correlativo de contenedor</div>'+
-    '<div class="dim" id="mpInfo">Consultando…</div>'+
     '<div class="dim" style="margin-top:12px">Columnas usadas: <b>No Orden</b> (OC), <b>Articulo</b> (SKU), <b>Cantidad</b> (pedido), <b>Cant. Entr</b> (recibido SAP), Descripcion, Almacen, Razon Social.</div>');
 }
 
 /* ================================================================
    8. ARRANQUE
    ================================================================ */
-/* el arranque vive en la sección de base compartida (part6) */
+idbGet('kv','catalogo').then(c=>{ CAT=c||null; refreshHome(); })
+  .catch(()=>{ refreshHome(); });
 window.addEventListener('beforeunload',()=>{ if(RECEP) saveRecep(true); });
 
 </script>
@@ -1949,10 +1300,9 @@ function tarjasPDF(tarjas, nombre){
     doc.setFontSize(ps);
     if(plines.length===1) doc.text(plines[0], 40, 132);
     else { doc.text(plines[0], 40, 96); doc.text(plines[1], 40, 96+ps*1.05); }
-    const topRight = [ (t.bultos>1? ('BULTO '+t.bulto+'/'+t.bultos) : ''), (t.cont||'') ].filter(Boolean).join('  ·  ');
-    if(topRight){
-      doc.setFont('helvetica','bold'); doc.setFontSize(15);
-      doc.text(topRight, 812, 43, {align:'right'});
+    if(t.bultos>1){
+      doc.setFontSize(15);
+      doc.text('BULTO '+t.bulto+'/'+t.bultos, 812, 43, {align:'right'});
     }
     // fila de datos
     const hayCajas = t.cajas!=='' && t.cajas!=null && num(t.cajas)>0;
@@ -1975,18 +1325,10 @@ function tarjasPDF(tarjas, nombre){
     });
     // VENCIMIENTO
     chip(doc,30,246,'VENCIMIENTO');
-    const anchoV = t.factura? 460 : 500;
     const vt = t.venc? iso2dmy(t.venc) : 'SIN VENCIMIENTO';
-    const vs2 = fitSize(doc, vt, anchoV, 86, 26);
+    const vs2 = fitSize(doc, vt, 500, 86, 26);
     doc.setFont('helvetica','bold'); doc.setFontSize(vs2);
     doc.text(vt, 40, 348);
-    if(t.factura){                       // factura visible: la OC puede venir en varias
-      doc.line(560,238,560,378);
-      chip(doc,570,246,'FACTURA');
-      const fs2 = fitSize(doc, String(t.factura), 230, 40, 14);
-      doc.setFont('helvetica','bold'); doc.setFontSize(fs2);
-      doc.text(String(t.factura), 578, 348);
-    }
     // fechas
     chip(doc,30,386,'DIA DE RECEPCION');
     doc.setFont('helvetica','bold'); doc.setFontSize(27);
@@ -1994,38 +1336,16 @@ function tarjasPDF(tarjas, nombre){
     chip(doc,429,386,'ELABORACION');
     doc.setFontSize(27);
     doc.text(t.elab? iso2dmy(t.elab) : '—', 437, 436);
-    // ---- códigos de barras: SKU y CONTENEDOR, lado a lado ----
-    const sku  = String(t.sku||'');
-    const cont = String(t.cont||'');
-    if(cont){
-      doc.setLineWidth(1);
-      doc.line(22,448,820,448);          // separa la zona de barras
-      doc.line(22,548,820,548);          // deja el pie fuera de las celdas
-      doc.line(421,448,421,548);         // divide SKU | CONTENEDOR
-      // izquierda: SKU
-      drawC128(doc, sku, 221, 456, 330, 44);
-      doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.text(sku, 221, 522, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8);
-      doc.text('SKU · CODE 128', 221, 538, {align:'center'});
-      // derecha: código de contenedor
-      drawC128(doc, cont, 620, 456, 330, 44);
-      doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.text(cont, 620, 522, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8);
-      doc.text('CONTENEDOR · CODE 128', 620, 538, {align:'center'});
-    } else {                              // tarjas antiguas sin código asignado
-      drawC128(doc, sku, 421, 462, 300, 57);
-      doc.setFont('helvetica','bold'); doc.setFontSize(17);
-      doc.text(sku, 421, 536, {align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(8);
-      doc.text('CODE 128 / SKU', 36, 563);
-    }
+    // código de barras
+    drawC128(doc, String(t.sku||''), 421, 462, 300, 57);
+    doc.setFont('helvetica','bold'); doc.setFontSize(17);
+    doc.text(String(t.sku||''), 421, 536, {align:'center'});
     // pie
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('CODE 128 / SKU', 36, 563);
     const pie = 'Bodega Quinta · Recepción OC '+t.oc+(t.factura? (' · Factura '+t.factura):'')+
-                (t.prov? (' · '+t.prov):'')+' · '+iso2dmy(t.recep)+(cont? (' · Contenedor '+cont):'');
-    doc.text(pie.length>130? pie.slice(0,127)+'…' : pie, 812, 564, {align:'right'});
+                (t.prov? (' · '+t.prov):'')+' · '+iso2dmy(t.recep);
+    doc.text(pie.length>110? pie.slice(0,107)+'…' : pie, 812, 563, {align:'right'});
   });
   const fn = nombre||('Tarjas_'+(tarjas[0]?tarjas[0].oc:'')+'.pdf');
   // en móvil: abrir en visor para compartir/imprimir; si el navegador lo bloquea, descarga
@@ -2053,28 +1373,12 @@ function tarjasDeLinea(key){
     const n = Math.max(1, parseInt(lt.bultos||1,10));
     const cantU = n>1 ? (num(lt.cant)/n) : num(lt.cant);
     const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
-    const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
-    const cc = contDeLote(lt);
     for(let b=1;b<=n;b++){
       out.push({producto:L.desc, sku:L.sku, lote:lt.lote, cant:cantU, cajas:cajasU, venc:lt.venc, elab:lt.elab,
-                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:fnum, fid:lt.fid||'',
-                cont:cc[b-1]||'', bulto:b, bultos:n});
+                recep:RECEP.fecha, oc:ORD.oc, prov:ORD.prov, factura:RECEP.factura||'', bulto:b, bultos:n});
     }
   });
   return out;
-}
-/* tarjas sólo de una factura (útil cuando la OC llega en varias) */
-function tarjasDeFactura(fid){
-  let out=[];
-  Object.keys(ORD.lineas).forEach(k=>{ out=out.concat(tarjasDeLinea(k).filter(t=>(t.fid||'')===fid)); });
-  return out;
-}
-function imprimirFactura(fid){
-  const t=tarjasDeFactura(fid);
-  if(!t.length){ toast('Esa factura no tiene lotes'); return; }
-  const n=facNum(fid)||'sf';
-  tarjasPDF(t, 'Tarjas_OC'+ORD.oc+'_F'+String(n).replace(/\W/g,'')+'.pdf');
-  toast(t.length+' tarja(s) de la factura '+n);
 }
 function imprimirLinea(key){
   const t = tarjasDeLinea(key);
@@ -2087,11 +1391,8 @@ function imprimirLote(key,i){
   const n=Math.max(1,parseInt(lt.bultos||1,10));
   const cantU = n>1? num(lt.cant)/n : num(lt.cant);
   const cajasU = (lt.cajas===''||lt.cajas==null)? '' : (n>1? num(lt.cajas)/n : num(lt.cajas));
-  const fnum = facNum(lt.fid) || (facArr().length===1? facArr()[0].num : '');
-  const cc = contDeLote(lt);
   const t=[]; for(let b=1;b<=n;b++) t.push({producto:L.desc,sku:L.sku,lote:lt.lote,cant:cantU,cajas:cajasU,venc:lt.venc,
-      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:fnum,fid:lt.fid||'',
-      cont:cc[b-1]||'',bulto:b,bultos:n});
+      elab:lt.elab,recep:RECEP.fecha,oc:ORD.oc,prov:ORD.prov,factura:RECEP.factura||'',bulto:b,bultos:n});
   tarjasPDF(t, 'Tarja_OC'+ORD.oc+'_'+L.sku+'_'+(lt.lote||'').replace(/\W/g,'')+'.pdf');
 }
 function imprimirTodas(){
@@ -2124,14 +1425,11 @@ function cargarDia(){
     const dia = rs.filter(r => (r.fecha||'') === DIA);
     const ordenes = [];
     dia.forEach(r=>{
-      migraRecep(r);
-      const fmap = facMap(r);
       const cat = CAT && CAT.ordenes[r.oc];
       const lineas = [];
       for(const key in r.lineas){
         const L = cat && cat.lineas[key];
-        const lotes = (r.lineas[key]||[]).map(l=>{ const c=Object.assign({},l); c.fac = fmap[l.fid]||'';
-          c.fobj = (r.facturas||[]).find(f=>f.id===l.fid)||null; return c; });
+        const lotes = r.lineas[key]||[];
         const rec = lotes.reduce((s,l)=>s+num(l.cant),0);
         const cajas = lotes.reduce((s,l)=>s+num(l.cajas),0);
         const pend = L? Math.max(0, L.cant - L.entr) : 0;
@@ -2142,12 +1440,9 @@ function cargarDia(){
                       estado: !L? 'S/D' : Math.abs(dif)<0.001? 'CONFORME' : (dif<0? 'FALTANTE':'EXCESO') });
       }
       lineas.sort((a,b)=> String(a.desc).localeCompare(String(b.desc)));
-      if(lineas.length){
-        let sinFac=0; lineas.forEach(l=>l.lotes.forEach(x=>{ if(!x.fac) sinFac++; }));
-        ordenes.push({ oc:r.oc, prov:r.prov||(cat?cat.prov:''), alm:r.alm||(cat?cat.alm:''),
-                       receptor:r.receptor||'', facturas:(r.facturas||[]).slice(), factura:facTxt(r), guia:r.guia||'',
-                       sinFac, fecha:r.fecha, lineas });
-      }
+      if(lineas.length) ordenes.push({ oc:r.oc, prov:r.prov||(cat?cat.prov:''), alm:r.alm||(cat?cat.alm:''),
+                                       receptor:r.receptor||'', factura:r.factura||'', guia:r.guia||'',
+                                       fecha:r.fecha, lineas });
     });
     ordenes.sort((a,b)=> String(a.prov).localeCompare(String(b.prov)));
     DIADATA = ordenes;
@@ -2159,16 +1454,13 @@ function renderDia(){
   cargarDia().then(ords=>{
     show('dia');
     const nOC = ords.length;
-    let nLin=0, cajas=0, tarjas=0, ok=0, nFav=0, nFal=0, totFav=0, totFal=0;
+    let nLin=0, cajas=0, tarjas=0, dif=0, ok=0;
     ords.forEach(o=>o.lineas.forEach(l=>{ nLin++; cajas+=l.cajas;
       tarjas += l.lotes.reduce((s,x)=>s+Math.max(1,parseInt(x.bultos||1,10)),0);
-      if(l.estado==='CONFORME') ok++;
-      else if(l.estado==='EXCESO'){ nFav++; totFav+=l.dif; }
-      else if(l.estado==='FALTANTE'){ nFal++; totFal+=(-l.dif); } }));
+      if(l.estado==='CONFORME') ok++; else if(l.estado!=='S/D') dif++; }));
 
     $('dkL').innerHTML = nOC+' OC · '+nLin+' línea(s)'+(cajas?(' · '+fmt(cajas)+' cajas'):'');
-    $('dkR').innerHTML = (nFav? ('<b style="color:#7dd3fc">+'+fmt(totFav)+' a favor</b>'+(nFal?' · ':'')) : '')+
-      (nFal? ('<b style="color:#fbbf24">'+nFal+' con faltante</b>') : (nFav? '' : '<b style="color:#6ee7a0">sin diferencias</b>'));
+    $('dkR').innerHTML = dif? ('<b style="color:#fca5a5">'+dif+' con diferencia</b>') : '<b style="color:#6ee7a0">sin diferencias</b>';
 
     if(!nOC){
       $('diaBody').innerHTML = '<div class="empty"><div class="ic">📅</div>No hay recepciones registradas el '+iso2dmy(DIA)+'</div>';
@@ -2179,30 +1471,22 @@ function renderDia(){
         '<div class="kpi acc"><div class="v">'+nOC+'</div><div class="l">Órdenes</div></div>'+
         '<div class="kpi"><div class="v">'+nLin+'</div><div class="l">Productos</div></div>'+
         '<div class="kpi ok"><div class="v">'+fmt(cajas)+'</div><div class="l">Cajas</div></div>'+
-        (nFav? '<div class="kpi fav"><div class="v">'+nFav+'</div><div class="l">A favor</div></div>' : '')+
-        '<div class="kpi '+(nFal?'bad':'ok')+'"><div class="v">'+nFal+'</div><div class="l">Faltantes</div></div>'+
+        '<div class="kpi '+(dif?'bad':'ok')+'"><div class="v">'+dif+'</div><div class="l">Diferencias</div></div>'+
       '</div>';
     ords.forEach(o=>{
       html += '<div class="card tight" style="margin-bottom:10px">'+
         '<div style="font-weight:800;font-size:14.5px">OC '+esc(o.oc)+' · '+esc(o.prov||'')+'</div>'+
         '<div class="meta" style="margin:7px 0 9px">'+
-          ((o.facturas&&o.facturas.length)
-             ? o.facturas.map(f=>'<span class="tag">Factura <b>'+esc(f.num)+'</b></span>').join('')
-             : '<span class="tag" style="border-color:#6b4d15;color:#fbbf24">SIN FACTURA</span>')+
-          (o.sinFac&&o.facturas&&o.facturas.length>1?'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">'+o.sinFac+' lote(s) sin factura</span>':'')+
+          (o.factura?'<span class="tag">Factura <b>'+esc(o.factura)+'</b></span>':'<span class="tag" style="border-color:#6b4d15;color:#fbbf24">SIN FACTURA</span>')+
           (o.guia?'<span class="tag">Guía <b>'+esc(o.guia)+'</b></span>':'')+
           (o.alm?'<span class="tag">'+esc(o.alm)+'</span>':'')+
           (o.receptor?'<span class="tag">'+esc(o.receptor)+'</span>':'')+
         '</div>'+
-        (o.facturas||[]).filter(transHay).map(f=>
-          '<div class="transline" style="margin:0 0 7px">🚚 F '+esc(f.num)+' · '+esc(transTxt(f))+'</div>').join('')+
         '<table class="rep"><thead><tr><th>Producto</th><th class="n">Recib.</th><th class="n">Cajas</th><th class="n">Dif.</th></tr></thead><tbody>'+
         o.lineas.map(l=>'<tr><td><b>'+esc(l.desc)+'</b><br><span class="dim">SKU '+esc(l.sku)+
-            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.fac?(' [F '+esc(x.fac)+']'):'')+(x.venc?(' vence '+iso2dmy(x.venc)):'')+
-              (contDeLote(x).length?(' · '+contDeLote(x).join(' ')):'')).join(' / ') : '')+'</span></td>'+
+            (l.lotes.length? ' · '+l.lotes.map(x=>esc(x.lote||'—')+(x.venc?(' vence '+iso2dmy(x.venc)):'')).join(' / ') : '')+'</span></td>'+
           '<td class="n">'+fmt(l.rec)+'</td><td class="n">'+(l.cajas?fmt(l.cajas):'—')+'</td>'+
-          '<td class="n" style="color:'+(l.dif===0?'#6ee7a0':(l.dif<0?'#fbbf24':'#7dd3fc'))+'"><b>'+(l.dif>0?'+':'')+fmt(l.dif)+'</b>'+
-            (l.dif>0.001? '<br><span class="dim">a favor</span>':'')+'</td></tr>').join('')+
+          '<td class="n" style="color:'+(l.dif===0?'#6ee7a0':(l.dif<0?'#fbbf24':'#fca5a5'))+'"><b>'+(l.dif>0?'+':'')+fmt(l.dif)+'</b></td></tr>').join('')+
         '</tbody></table>'+
         '<div style="margin-top:9px"><button class="mini gh" onclick="DESDE_DIA=true;abrirOC(\'' + esc(o.oc) + '\')">Abrir OC</button></div>'+
       '</div>';
@@ -2213,97 +1497,29 @@ function renderDia(){
 
 /* ---------------- Excel del día (2 hojas) ---------------- */
 function libroDia(){
-  const det=[['Fecha','OC','Proveedor','Almacen','Factura','Guia','Recepcionó',
-              'Conductor','RUT conductor','Patente','Hora llegada','Hora salida','Permanencia',
-              'SKU','Descripcion',
-              'Cantidad pedida','Recibido SAP','Pendiente','Recibido','Diferencia',
-              'A favor','Faltante','Motivo excedente','Estado',
-              'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos','Contenedores']];
-  const res=[['Fecha','OC','Proveedor','Facturas','N° facturas','Guia','Recepcionó',
-              'Conductores','Patentes','Primera llegada','Última salida',
-              'Productos','Cajas','Lineas conformes',
-              'Lineas a favor','Total a favor','Lineas con faltante','Total faltante']];
-  const dif=[['Fecha','OC','Proveedor','Factura','SKU','Descripcion','Almacen',
-              'Cantidad pedida','Recibido SAP','Pendiente','Recibido','Diferencia',
-              'A favor','Faltante','Motivo excedente','Lotes','Estado']];
-  const pf =[['Fecha','OC','Proveedor','Factura',
-              'Conductor','RUT conductor','Patente','Hora llegada','Hora salida','Permanencia',
-              'Productos','Cantidad','Cajas','Lotes','Tarjas']];
+  const det=[['Fecha','OC','Proveedor','Almacen','Factura','Guia','Recepcionó','SKU','Descripcion',
+              'Cantidad pedida','Recibido SAP','Pendiente','Recibido','Diferencia','Estado',
+              'Lote','Cant lote','Cajas','Vencimiento','Elaboracion','Bultos']];
+  const res=[['Fecha','OC','Proveedor','Factura','Guia','Recepcionó','Productos','Cajas','Lineas conformes','Lineas con diferencia']];
   (DIADATA||[]).forEach(o=>{
-    let cajas=0, ok=0, nFav=0, nFal=0, qFav=0, qFal=0;
-    const fol = o.facturas||[];
-    const porFac={};   // factura -> totales
+    let cajas=0, ok=0, dif=0;
     o.lineas.forEach(l=>{
-      cajas+=l.cajas;
-      const fav = l.dif>0.001? l.dif : 0, fal = l.dif<-0.001? -l.dif : 0;
-      if(l.estado==='CONFORME') ok++;
-      else if(fav){ nFav++; qFav+=fav; }
-      else if(fal){ nFal++; qFal+=fal; }
-      const mot = motExcLotes(l.lotes);
-      if(fav||fal) dif.push([iso2dmy(o.fecha),o.oc,o.prov,o.factura,l.sku,l.desc,o.alm,
-        l.cant,l.entr,l.pend,l.rec,l.dif,fav||'',fal||'',mot,
-        (l.lotes||[]).map(x=>up(x.lote)).filter(Boolean).join(' / '),l.estado]);
-      const base=(fac,fo,m)=>[iso2dmy(o.fecha),o.oc,o.prov,o.alm,fac,o.guia,o.receptor,
-                  fo?up(fo.conductor):'', fo?up(fo.rut):'', fo?up(fo.patente):'',
-                  fo?up(fo.hllega):'', fo?up(fo.hsale):'', fo?durTxt(fo.hllega,fo.hsale):'',
-                  l.sku,l.desc,
-                  l.cant,l.entr,l.pend,l.rec,l.dif,
-                  fav||'', fal||'', m||'', l.estado];
-      if(!l.lotes.length) det.push(base(o.factura, fol.length===1?fol[0]:null, mot).concat(['','','','','','','']));
-      else l.lotes.forEach(x=>{
-        const fo = x.fobj||null;
-        det.push(base(x.fac||'', fo, up(x.difmot)).concat([x.lote||'',num(x.cant),x.cajas===''||x.cajas==null?'':num(x.cajas),
-                                         iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1,
-                                         contDeLote(x).join(' ')]));
-        const k=x.fac||'(SIN FACTURA)';
-        const t=porFac[k]||(porFac[k]={prod:{},cant:0,cajas:0,lotes:0,tarjas:0,fo:fo});
-        if(!t.fo && fo) t.fo=fo;
-        t.prod[l.sku]=1; t.cant+=num(x.cant); t.cajas+=num(x.cajas); t.lotes++;
-        t.tarjas+=Math.max(1,parseInt(x.bultos||1,10));
-      });
+      cajas+=l.cajas; if(l.estado==='CONFORME') ok++; else if(l.estado!=='S/D') dif++;
+      const base=[iso2dmy(o.fecha),o.oc,o.prov,o.alm,o.factura,o.guia,o.receptor,l.sku,l.desc,
+                  l.cant,l.entr,l.pend,l.rec,l.dif,l.estado];
+      if(!l.lotes.length) det.push(base.concat(['','','','','','']));
+      else l.lotes.forEach(x=>det.push(base.concat([x.lote||'',num(x.cant),x.cajas===''||x.cajas==null?'':num(x.cajas),
+                                                    iso2dmy(x.venc),iso2dmy(x.elab),x.bultos||1])));
     });
-    Object.keys(porFac).forEach(k=>{ const t=porFac[k], fo=t.fo;
-      pf.push([iso2dmy(o.fecha),o.oc,o.prov,k,
-               fo?up(fo.conductor):'', fo?up(fo.rut):'', fo?up(fo.patente):'',
-               fo?up(fo.hllega):'', fo?up(fo.hsale):'', fo?durTxt(fo.hllega,fo.hsale):'',
-               Object.keys(t.prod).length,t.cant,t.cajas,t.lotes,t.tarjas]); });
-    const conds = fol.map(f=>up(f.conductor)).filter(Boolean);
-    const pats  = fol.map(f=>up(f.patente)).filter(Boolean);
-    const lleg  = fol.map(f=>up(f.hllega)).filter(horaOK).sort();
-    const sale  = fol.map(f=>up(f.hsale)).filter(horaOK).sort();
-    res.push([iso2dmy(o.fecha),o.oc,o.prov,o.factura,fol.length,o.guia,o.receptor,
-              conds.join(' / '), pats.join(' / '),
-              lleg.length?lleg[0]:'', sale.length?sale[sale.length-1]:'',
-              o.lineas.length,cajas,ok,nFav,qFav||'',nFal,qFal||'']);
+    res.push([iso2dmy(o.fecha),o.oc,o.prov,o.factura,o.guia,o.receptor,o.lineas.length,cajas,ok,dif]);
   });
   const wb=XLSX.utils.book_new();
   const wsR=XLSX.utils.aoa_to_sheet(res);
-  wsR['!cols']=[{wch:12},{wch:9},{wch:34},{wch:20},{wch:11},{wch:12},{wch:14},
-                {wch:26},{wch:16},{wch:14},{wch:13},
-                {wch:10},{wch:9},{wch:16},
-                {wch:14},{wch:13},{wch:18},{wch:14}];
+  wsR['!cols']=[{wch:12},{wch:9},{wch:34},{wch:12},{wch:12},{wch:14},{wch:10},{wch:9},{wch:16},{wch:19}];
   XLSX.utils.book_append_sheet(wb,wsR,'Resumen');
-  if(dif.length>1){
-    const wsX=XLSX.utils.aoa_to_sheet(dif);
-    wsX['!cols']=[{wch:12},{wch:9},{wch:34},{wch:14},{wch:10},{wch:46},{wch:10},
-                  {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},
-                  {wch:10},{wch:10},{wch:28},{wch:20},{wch:13}];
-    XLSX.utils.book_append_sheet(wb,wsX,'Diferencias');
-  }
-  if(pf.length>1){
-    const wsF=XLSX.utils.aoa_to_sheet(pf);
-    wsF['!cols']=[{wch:12},{wch:9},{wch:34},{wch:14},
-                  {wch:24},{wch:14},{wch:9},{wch:12},{wch:12},{wch:13},
-                  {wch:10},{wch:11},{wch:9},{wch:8},{wch:8}];
-    XLSX.utils.book_append_sheet(wb,wsF,'Por factura');
-  }
   const wsD=XLSX.utils.aoa_to_sheet(det);
-  wsD['!cols']=[{wch:12},{wch:9},{wch:34},{wch:11},{wch:12},{wch:12},{wch:14},
-                {wch:24},{wch:14},{wch:9},{wch:12},{wch:12},{wch:13},
-                {wch:10},{wch:46},
-                {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},
-                {wch:10},{wch:10},{wch:28},{wch:13},
-                {wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7},{wch:28}];
+  wsD['!cols']=[{wch:12},{wch:9},{wch:34},{wch:11},{wch:12},{wch:12},{wch:14},{wch:10},{wch:46},
+                {wch:12},{wch:12},{wch:11},{wch:11},{wch:11},{wch:13},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:7}];
   XLSX.utils.book_append_sheet(wb,wsD,'Detalle');
   return wb;
 }
@@ -2317,30 +1533,22 @@ function excelDia(){
 
 /* ---------------- Envío por correo ---------------- */
 function textoDia(){
-  let nLin=0,cajas=0,nFav=0,nFal=0,qFav=0,qFal=0;
-  (DIADATA||[]).forEach(o=>o.lineas.forEach(l=>{ nLin++; cajas+=l.cajas;
-    if(l.dif>0.001){ nFav++; qFav+=l.dif; } else if(l.dif<-0.001){ nFal++; qFal+=(-l.dif); } }));
+  let nLin=0,cajas=0,dif=0;
+  (DIADATA||[]).forEach(o=>o.lineas.forEach(l=>{ nLin++; cajas+=l.cajas; if(l.estado!=='CONFORME'&&l.estado!=='S/D') dif++; }));
   let t = 'Recepción de materias primas — '+iso2dmy(DIA)+'\n\n'+
           (DIADATA||[]).length+' orden(es) de compra · '+nLin+' producto(s)'+(cajas?(' · '+fmt(cajas)+' cajas'):'')+'\n'+
-          (nFav? (nFav+' línea(s) con diferencia A FAVOR: llegaron '+fmt(qFav)+' de más\n'):'')+
-          (nFal? (nFal+' línea(s) con faltante: '+fmt(qFal)+'\n'):'')+
-          ((!nFav&&!nFal)? 'Sin diferencias de cantidad\n':'')+'\n';
+          (dif? (dif+' línea(s) con diferencia de cantidad'):'Sin diferencias de cantidad')+'\n\n';
   (DIADATA||[]).forEach(o=>{
-    const nf=(o.facturas||[]).length;
-    t += 'OC '+o.oc+' · '+(o.prov||'')+
-         (nf? (' · '+(nf>1? (nf+' facturas: '):'Factura ')+o.factura) : ' · SIN FACTURA')+
-         (o.guia?(' · Guía '+o.guia):'')+'\n';
-    (o.facturas||[]).forEach(f=>{ if(transHay(f)) t += '   Factura '+f.num+' · '+transTxt(f)+'\n'; });
+    t += 'OC '+o.oc+' · '+(o.prov||'')+(o.factura?(' · Factura '+o.factura):' · SIN FACTURA')+(o.guia?(' · Guía '+o.guia):'')+'\n';
     o.lineas.forEach(l=>{
       t += '   - '+l.desc+' (SKU '+l.sku+'): recibido '+fmt(l.rec)+
            (l.cajas?(' · '+fmt(l.cajas)+' cajas'):'')+
-           (l.dif>0.001? ('  >>> A FAVOR +'+fmt(l.dif)+(motExcLotes(l.lotes)? (' ('+motExcLotes(l.lotes)+')') : ''))
-             : (l.dif<-0.001? ('  >>> FALTAN '+fmt(-l.dif)) : ''))+'\n';
-      l.lotes.forEach(x=>{ t += '        lote '+(x.lote||'—')+(x.fac?(' · factura '+x.fac):'')+(x.venc?(' · vence '+iso2dmy(x.venc)):'')+'\n'; });
+           (Math.abs(l.dif)>0.001? ('  >>> '+(l.dif<0?'FALTAN ':'EXCESO ')+fmt(Math.abs(l.dif))) : '')+'\n';
+      l.lotes.forEach(x=>{ t += '        lote '+(x.lote||'—')+(x.venc?(' · vence '+iso2dmy(x.venc)):'')+'\n'; });
     });
     t += '\n';
   });
-  t += 'Detalle completo en el Excel adjunto (hojas Resumen, '+(nFav||nFal? 'Diferencias, ':'')+'Por factura y Detalle).\n';
+  t += 'Detalle completo en el Excel adjunto (hojas Resumen y Detalle).\n';
   return t;
 }
 function enviarDia(){
@@ -2374,116 +1582,6 @@ function fallbackMail(asunto,cuerpo,file){
     '<div class="okbox" style="margin:10px 0">Abre el correo y adjunta ese archivo desde Descargas. El asunto y el resumen ya van escritos.</div>'+
     '<a class="btn" style="text-align:center;text-decoration:none;display:block" href="'+link+'" onclick="closeModal()">Abrir correo</a>'+
     '<button class="btn sec" style="margin-top:8px" onclick="closeModal()">Cerrar</button>');
-}
-
-</script>
-<script>
-/* ================================================================
-   BASE COMPARTIDA · publicar ordenes.json en GitHub y cargarlo solo
-   ================================================================ */
-const BASE_URL = 'ordenes.json';   // debe quedar junto al HTML en el repo
-
-/* ---------- generar el archivo para subir a GitHub ---------- */
-function publicarBase(){
-  if(!CAT){ toast('Primero carga el Excel'); return; }
-  const pub = JSON.parse(JSON.stringify(CAT));
-  pub.meta.version   = 'pub-'+new Date().toISOString().replace(/[:.]/g,'').slice(0,15);
-  pub.meta.publicado = new Date().toISOString();
-  pub.meta.origen    = 'publicada';
-  const txt  = JSON.stringify(pub);
-  const blob = new Blob([txt], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='ordenes.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 60000);
-  // el equipo que publica también queda marcado como publicada
-  CAT.meta = pub.meta;
-  idbSet('kv','catalogo',CAT).then(refreshHome);
-  modal('<h3>Base lista para publicar</h3>'+
-    '<div class="muted">Se descargó <b>ordenes.json</b> ('+ (txt.length/1048576).toFixed(1) +' MB) con '+
-      CAT.meta.ordenes.toLocaleString('es-CL')+' órdenes.</div>'+
-    '<div class="okbox" style="margin:10px 0">Súbelo al repositorio <b>RECEPCION-VESPUCIO</b>, en la misma carpeta que la app:<br><br>'+
-      '1. Abre el repo → <b>Add file</b> → <b>Upload files</b><br>'+
-      '2. Arrastra <b>ordenes.json</b> (si ya existe, lo reemplaza)<br>'+
-      '3. <b>Commit changes</b><br><br>'+
-      'Listo: en unos minutos, cualquiera que abra el link tendrá la base cargada sin hacer nada.</div>'+
-    '<button class="btn" onclick="closeModal()">Entendido</button>');
-}
-function publicarPrompt(){
-  if(!CAT) return;
-  modal('<h3>¿Publicar esta base para el equipo?</h3>'+
-    '<div class="muted">Cargaste '+CAT.meta.ordenes.toLocaleString('es-CL')+' órdenes. Si publicas la base, '+
-      'el resto del equipo la recibe automáticamente al abrir la app y no tiene que cargar ningún Excel.</div>'+
-    '<button class="btn" style="margin-top:12px" onclick="closeModal();publicarBase()">Generar ordenes.json</button>'+
-    '<button class="btn sec" style="margin-top:8px" onclick="closeModal()">Ahora no</button>');
-}
-
-/* ---------- descargar la base publicada al abrir la app ---------- */
-function buscarBasePublicada(manual){
-  if(location.protocol==='file:'){ if(manual) toast('Abre la app desde el link de GitHub'); return Promise.resolve(false); }
-  const url = BASE_URL + '?v=' + Date.now();
-  if(manual) toast('Buscando base publicada…');
-  return fetch(url, {cache:'no-cache'})
-    .then(r=>{ if(!r.ok) throw new Error('sin base publicada ('+r.status+')'); return r.json(); })
-    .then(pub=>{
-      if(!pub || !pub.ordenes) throw new Error('archivo inválido');
-      const vLocal = CAT && CAT.meta ? (CAT.meta.version||'') : '';
-      const vPub   = pub.meta ? (pub.meta.version||'') : '';
-      if(CAT && vLocal===vPub){ if(manual) toast('Ya tienes la última base publicada'); return false; }
-      pub.meta = pub.meta||{};
-      pub.meta.origen='publicada'; pub.meta.build=BUILD_ID;
-      return idbSet('kv','catalogo',pub).then(()=>{
-        CAT=pub; refreshHome();
-        toast('Base actualizada: '+(pub.meta.ordenes||Object.keys(pub.ordenes).length).toLocaleString('es-CL')+' órdenes');
-        return true;
-      });
-    })
-    .catch(err=>{ if(manual) toast('No hay base publicada todavía'); return false; });
-}
-
-/* ---------- arranque: usa lo guardado y busca actualización ---------- */
-const NODATA_HTML = $('noData').innerHTML;
-sincronizarMP();
-idbGet('kv','catalogo').then(c=>{
-  CAT = c || null;
-  refreshHome();
-  if(!CAT && location.protocol!=='file:'){
-    const nd=$('noData');
-    nd.classList.remove('hide');
-    nd.innerHTML = '<h2>Buscando la base del equipo…</h2>'+
-      '<p class="muted" style="margin-top:0">Se descarga una sola vez y después funciona sin señal.</p>'+
-      '<div class="progress"><i style="width:65%"></i></div>';
-  }
-  return buscarBasePublicada(false);
-}).then(()=>{
-  if(!CAT){ $('noData').innerHTML = NODATA_HTML; }
-  refreshHome();
-}).catch(()=>{ if(!CAT) $('noData').innerHTML = NODATA_HTML; refreshHome(); });
-
-/* ---------- service worker: la app queda disponible sin señal ---------- */
-if('serviceWorker' in navigator && location.protocol!=='file:'){
-  window.addEventListener('load', ()=>{
-    const habiaSW = !!navigator.serviceWorker.controller;
-    let recargando = false;
-    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
-      if(!habiaSW || recargando) return;   // primera instalación: no recarga
-      recargando = true; location.reload();
-    });
-    navigator.serviceWorker.register('sw.js').then(reg=>{
-      reg.update();                                   // busca versión nueva al abrir
-      setInterval(()=>reg.update(), 60*60*1000);      // y cada hora si queda abierta
-      if(reg.waiting) reg.waiting.postMessage('skipWaiting');
-      reg.addEventListener('updatefound', ()=>{
-        const nw = reg.installing; if(!nw) return;
-        nw.addEventListener('statechange', ()=>{
-          if(nw.state==='installed' && navigator.serviceWorker.controller){
-            nw.postMessage('skipWaiting');
-            try{ toast('Actualizando la app…'); }catch(e){}
-          }
-        });
-      });
-    }).catch(()=>{});
-  });
 }
 
 </script>

@@ -1,37 +1,94 @@
-/* Service worker · Recepción OC Quinta
-   Deja la app disponible sin señal (bodega, cámara de frío). */
-const CACHE = 'recepcion-oc-v1';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+/* ================================================================
+   Bodega Quinta · service worker
+   ----------------------------------------------------------------
+   SUBE EL NÚMERO DE "VERSION" CADA VEZ QUE SUBAS UNA VERSIÓN NUEVA
+   de index.html o regularizacion.html. Eso borra lo guardado viejo
+   y obliga a los teléfonos a bajar los archivos nuevos.
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL).catch(()=>{})).then(()=>self.skipWaiting()));
+   Estrategia:
+     · HTML y .json  → primero la red, y si no hay señal, lo guardado.
+                       Así la app se actualiza sola apenas hay señal.
+     · íconos y demás → primero lo guardado (es más rápido).
+   ================================================================ */
+const VERSION = '2026-08-28-01';
+const CACHE   = 'quinta-' + VERSION;
+
+const INDEX = new URL('index.html', self.location).href;
+
+/* Lo que debe quedar disponible sin señal.
+   Si alguno no existe en el repo, se ignora sin romper la instalación. */
+const PRECACHE = [
+  './',
+  './index.html',
+  './regularizacion.html',
+  './ordenes.json',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png'
+];
+
+self.addEventListener('install', e=>{
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c=>Promise.all(PRECACHE.map(u=>c.add(u).catch(()=>null))))
+      .then(()=>self.skipWaiting())          // la versión nueva no espera
+  );
 });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
-    .then(()=>self.clients.claim()));
+
+self.addEventListener('activate', e=>{
+  e.waitUntil(
+    caches.keys()
+      .then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+      .then(()=>self.clients.claim())        // toma el control de las pestañas abiertas
+  );
 });
-self.addEventListener('fetch', e => {
+
+self.addEventListener('fetch', e=>{
   const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin !== location.origin) return;
+  if(req.method !== 'GET') return;
 
-  // base de órdenes: primero la red (para recibir actualizaciones), si no hay señal usa la copia
-  if (url.pathname.endsWith('ordenes.json')) {
+  let url;
+  try{ url = new URL(req.url); }catch(err){ return; }
+  if(url.origin !== self.location.origin) return;      // nada externo se toca
+
+  const esHTML = req.mode === 'navigate' ||
+                 (req.headers.get('accept')||'').indexOf('text/html') >= 0;
+  const esJSON = url.pathname.slice(-5) === '.json';
+
+  /* La clave del caché ignora el ?v=123456 que agrega la app,
+     si no cada consulta guardaría una copia nueva y sin señal no
+     encontraría ninguna. */
+  const clave = new Request(url.origin + url.pathname);
+
+  if(esHTML || esJSON){
     e.respondWith(
-      fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c=>c.put('ordenes.json', cp)); return r; })
-        .catch(() => caches.match('ordenes.json'))
+      fetch(req, {cache:'no-store'})
+        .then(res=>{
+          if(res && res.ok && res.type === 'basic'){
+            const copia = res.clone();
+            caches.open(CACHE).then(c=>c.put(clave, copia)).catch(()=>{});
+          }
+          return res;
+        })
+        .catch(()=> caches.match(clave)
+          .then(hit => hit || (esHTML ? caches.match(INDEX) : undefined))
+          .then(hit => hit || Response.error()))
     );
     return;
   }
-  // la app: primero la copia guardada (arranque instantáneo), y se refresca por detrás
+
   e.respondWith(
-    caches.match(req, {ignoreSearch:true}).then(hit => {
-      const net = fetch(req).then(r => {
-        if (r && r.status === 200) { const cp = r.clone(); caches.open(CACHE).then(c=>c.put(req, cp)); }
-        return r;
-      }).catch(()=>hit);
-      return hit || net;
-    })
+    caches.match(clave).then(hit => hit || fetch(req).then(res=>{
+      if(res && res.ok && res.type === 'basic'){
+        const copia = res.clone();
+        caches.open(CACHE).then(c=>c.put(clave, copia)).catch(()=>{});
+      }
+      return res;
+    }))
   );
+});
+
+/* La app puede pedir "actualízate ahora" */
+self.addEventListener('message', e=>{
+  if(e.data === 'skipWaiting') self.skipWaiting();
 });
