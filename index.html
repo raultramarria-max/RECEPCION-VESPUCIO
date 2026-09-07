@@ -202,6 +202,7 @@ table.rep td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:no
       <button class="btn sec" onclick="showProv()">Buscar por proveedor</button>
       <button class="btn sec" onclick="showHist()">Recepciones</button>
     </div>
+    <button class="btn gh" style="margin-top:8px" onclick="showAgenda()">Llegadas del día</button>
     <button class="btn gh" style="margin-top:8px" onclick="showDia()">Reporte del día</button>
   </div>
 
@@ -223,6 +224,28 @@ table.rep td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:no
     <div class="dim" style="margin-top:8px">Muestra las órdenes con saldo pendiente primero.</div>
   </div>
   <div id="provRes"></div>
+</div>
+
+<!-- ============ SCREEN: LLEGADAS DEL DÍA ============ -->
+<div class="wrap hide" id="scAgenda">
+  <div class="card">
+    <div class="fgrid">
+      <div><label class="f">Fecha de entrega</label>
+        <input type="date" id="agFecha" onchange="AGDIA=this.value;renderAgenda()"></div>
+      <div><label class="f">Almacén</label>
+        <select id="agAlm" onchange="AGALM=this.value;renderAgenda()"></select></div>
+    </div>
+    <div class="btnrow" style="margin-top:10px">
+      <button class="btn sec" style="white-space:nowrap" onclick="agDia(-1)">‹ Anterior</button>
+      <button class="btn sec" style="white-space:nowrap" onclick="agHoy()">Hoy</button>
+      <button class="btn sec" style="white-space:nowrap" onclick="agDia(1)">Siguiente ›</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="mini" onclick="agSetFiltro('pend')" id="agf-pend">Con pendiente</button>
+      <button class="mini" onclick="agSetFiltro('todas')" id="agf-todas">Todas</button>
+    </div>
+  </div>
+  <div id="agBody"></div>
 </div>
 
 <!-- ============ SCREEN: ORDEN ============ -->
@@ -690,8 +713,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
    RECEPCIÓN DE ÓRDENES DE COMPRA · QUINTA
    App móvil autocontenida — sin internet, sin instalación.
    ================================================================ */
-const BUILD_ID = '20260826-afavor';
-const APP_VER  = '1.4';
+const BUILD_ID = '20260907-llegadas';
+const APP_VER  = '1.5';
 
 /* ---------------- utilidades ---------------- */
 const $  = id => document.getElementById(id);
@@ -1170,6 +1193,7 @@ let CAT   = null;   // {meta:{}, ordenes:{ "117882": {...} }}
 let ORD   = null;   // orden abierta
 let RECEP = null;   // recepción en curso {orden, fecha, receptor, lineas:{key:[lotes]}}
 let SCREEN='buscar', FILTRO='todos', ABIERTA=null;
+let AGDIA=null, AGALM='__all', AGFIL='pend', DESDE_AGENDA=false;   // llegadas del día
 let DIA=null, DIADATA=null, MAIL='', DESDE_DIA=false;
 const HIST_STACK=[];
 
@@ -1275,8 +1299,8 @@ function parseWB(buf, fname){
    2. NAVEGACIÓN
    ================================================================ */
 function show(sc){
-  ['scBuscar','scProv','scOrden','scResumen','scHist','scDia'].forEach(id=>$(id).classList.add('hide'));
-  const map={buscar:'scBuscar',prov:'scProv',orden:'scOrden',resumen:'scResumen',hist:'scHist',dia:'scDia'};
+  ['scBuscar','scProv','scAgenda','scOrden','scResumen','scHist','scDia'].forEach(id=>$(id).classList.add('hide'));
+  const map={buscar:'scBuscar',prov:'scProv',agenda:'scAgenda',orden:'scOrden',resumen:'scResumen',hist:'scHist',dia:'scDia'};
   $(map[sc]).classList.remove('hide');
   SCREEN=sc;
   $('stickyOrden').classList.toggle('hide', !(sc==='orden'||sc==='resumen'));
@@ -1285,6 +1309,7 @@ function show(sc){
   $('btnData').classList.toggle('hide', sc!=='buscar');
   const t={buscar:['Recepción de OC','Quinta · Materias Primas'],
            prov:['Buscar orden','Por proveedor o producto'],
+           agenda:['Llegadas del día', AGDIA? iso2dmy(AGDIA):''],
            orden:['OC '+(ORD?ORD.oc:''), ORD?ORD.prov:''],
            resumen:['Resumen OC '+(ORD?ORD.oc:''),'Diferencias y tarjas'],
            hist:['Recepciones','Guardadas en este teléfono'],
@@ -1296,6 +1321,7 @@ function goBack(){
   if(SCREEN==='resumen'){ show('orden'); return; }
   if(SCREEN==='orden'){ saveRecep(true);
     if(DESDE_DIA){ DESDE_DIA=false; renderDia(); return; }
+    if(DESDE_AGENDA){ DESDE_AGENDA=false; showAgenda(); return; }
     show('buscar'); refreshHome(); return; }
   show('buscar'); refreshHome();
 }
@@ -1368,6 +1394,112 @@ function buscarProv(){
     '<div class="s">'+r.n+' línea(s) · '+(r.pend>0?('pendiente '+fmt(r.pend)):'sin saldo')+(r.fent?(' · entrega '+iso2dmy(r.fent)):'')+'</div>'+
     '</div><div class="chevron">›</div></div>').join('')
    : '<div class="empty"><div class="ic">🔍</div>Sin resultados</div>';
+}
+
+/* ================================================================
+   3B. LLEGADAS DEL DÍA
+   Resumen de las OC con fecha de entrega en un día:
+   proveedor · N° de orden · SKU por recibir. Filtro por almacén.
+   ================================================================ */
+function agAlmacenes(o){                 // almacenes que toca la orden
+  const s = {};
+  Object.values(o.lineas).forEach(L=>{ const a=up(L.alm)||up(o.alm); if(a) s[a]=1; });
+  const k = Object.keys(s);
+  return k.length? k : (up(o.alm)? [up(o.alm)] : []);
+}
+function agLlegadas(fecha){              // todas las OC que llegan ese día
+  const out=[];
+  if(!CAT || !CAT.ordenes) return out;
+  for(const oc in CAT.ordenes){
+    const o = CAT.ordenes[oc];
+    if(!o.fent || String(o.fent).slice(0,10) !== fecha) continue;
+    const ls = Object.values(o.lineas);
+    const pendL = ls.filter(L=> (L.cant - L.entr) > 0.001);
+    const skuTot  = new Set(ls.map(L=>L.sku)).size;
+    const skuPend = new Set(pendL.map(L=>L.sku)).size;
+    out.push({ oc, prov:o.prov||'(sin proveedor)', alms:agAlmacenes(o),
+               skuTot, skuPend,
+               cantPend: pendL.reduce((s,L)=>s+Math.max(0,L.cant-L.entr),0) });
+  }
+  out.sort((a,b)=> String(a.prov).localeCompare(String(b.prov)) || String(a.oc).localeCompare(String(b.oc)));
+  return out;
+}
+function showAgenda(){
+  if(!CAT || !CAT.ordenes){ toast('Primero carga la base de órdenes'); return; }
+  if(!AGDIA) AGDIA = hoyISO();
+  show('agenda');
+  $('agFecha').value = AGDIA;
+  renderAgenda();
+}
+function agHoy(){ AGDIA = hoyISO(); $('agFecha').value=AGDIA; renderAgenda(); }
+function agDia(n){
+  const d = new Date((AGDIA||hoyISO())+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  AGDIA = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  $('agFecha').value = AGDIA; renderAgenda();
+}
+function agSetFiltro(f){ AGFIL=f; renderAgenda(); }
+
+function renderAgenda(){
+  if(!AGDIA) AGDIA = hoyISO();
+  ['pend','todas'].forEach(f=>{ const b=$('agf-'+f); if(b) b.className='mini'+(AGFIL===f?' acc':''); });
+  $('ttl').innerHTML = 'Llegadas del día<span class="sub">'+esc(iso2dmy(AGDIA))+'</span>';
+
+  const todas = agLlegadas(AGDIA);
+
+  // el selector de almacén se arma con los almacenes que llegan ese día
+  const alms = {};
+  todas.forEach(r=>r.alms.forEach(a=>alms[a]=(alms[a]||0)+1));
+  const lista = Object.keys(alms).sort();
+  if(AGALM && AGALM!=='__all' && lista.indexOf(AGALM)<0) AGALM='__all';
+  $('agAlm').innerHTML = '<option value="__all">Todos'+(todas.length?(' ('+todas.length+')'):'')+'</option>'+
+    lista.map(a=>'<option value="'+esc(a)+'"'+(AGALM===a?' selected':'')+'>'+esc(a)+' ('+alms[a]+')</option>').join('');
+  $('agAlm').value = AGALM||'__all';
+
+  let rows = todas;
+  if(AGALM && AGALM!=='__all') rows = rows.filter(r=>r.alms.indexOf(AGALM)>=0);
+  if(AGFIL==='pend') rows = rows.filter(r=>r.skuPend>0);
+
+  if(!rows.length){
+    $('agBody').innerHTML = '<div class="empty"><div class="ic">🚚</div>'+
+      (todas.length? 'Ninguna orden con ese filtro el '+iso2dmy(AGDIA)
+                   : 'No hay órdenes con entrega el '+iso2dmy(AGDIA))+'</div>';
+    return;
+  }
+  const provs   = new Set(rows.map(r=>r.prov)).size;
+  const skuPend = rows.reduce((s,r)=>s+r.skuPend,0);
+
+  $('agBody').innerHTML =
+    '<div class="kpis">'+
+      '<div class="kpi acc"><div class="v">'+rows.length+'</div><div class="l">Órdenes</div></div>'+
+      '<div class="kpi"><div class="v">'+provs+'</div><div class="l">Proveedores</div></div>'+
+      '<div class="kpi ok"><div class="v">'+skuPend+'</div><div class="l">SKU por recibir</div></div>'+
+    '</div>'+
+    '<div class="card tight">'+
+      '<table class="rep"><thead><tr><th>Proveedor</th><th>Orden</th><th class="n">SKU</th></tr></thead><tbody>'+
+      rows.map(r=>'<tr onclick="DESDE_AGENDA=true;abrirOC(\''+esc(r.oc)+'\')" style="cursor:pointer">'+
+        '<td><b>'+esc(r.prov)+'</b>'+
+          (r.alms.length? '<br><span class="dim">'+esc(r.alms.join(' · '))+'</span>' : '')+'</td>'+
+        '<td><b>'+esc(r.oc)+'</b></td>'+
+        '<td class="n"><b>'+r.skuPend+'</b>'+
+          (r.skuTot!==r.skuPend? '<br><span class="dim">de '+r.skuTot+'</span>' : '')+'</td></tr>').join('')+
+      '</tbody></table>'+
+      '<div class="dim" style="margin-top:9px">Toca una fila para abrir la orden y recepcionarla.</div>'+
+    '</div>'+
+    '<button class="btn sec" style="margin-top:10px" onclick="agExcel()">Descargar Excel</button>';
+}
+
+function agExcel(){
+  let rows = agLlegadas(AGDIA);
+  if(AGALM && AGALM!=='__all') rows = rows.filter(r=>r.alms.indexOf(AGALM)>=0);
+  if(AGFIL==='pend') rows = rows.filter(r=>r.skuPend>0);
+  if(!rows.length){ toast('No hay órdenes para exportar'); return; }
+  const aoa=[['Fecha entrega','Proveedor','Orden','Almacen','SKU por recibir','SKU en la orden','Cantidad pendiente']];
+  rows.forEach(r=>aoa.push([iso2dmy(AGDIA), r.prov, r.oc, r.alms.join(' / '), r.skuPend, r.skuTot, r.cantPend]));
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:13},{wch:38},{wch:10},{wch:16},{wch:15},{wch:15},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,ws,'Llegadas');
+  XLSX.writeFile(wb,'Llegadas_'+AGDIA+((AGALM&&AGALM!=='__all')?('_'+String(AGALM).replace(/\W/g,'')):'')+'.xlsx');
 }
 
 /* ================================================================
