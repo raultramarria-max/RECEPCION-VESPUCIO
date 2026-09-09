@@ -1240,6 +1240,7 @@ function onFile(ev){
 function pg(p,txt){ const b=$('pgBar'), t=$('pgTxt'); if(b)b.style.width=p+'%'; if(t&&txt)t.textContent=txt; }
 
 function parseWB(buf, fname){
+  try{localStorage.removeItem('q_cat');}catch(e){}
   pg(15,'Abriendo libro…');
   const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true});
   let best=null, bestIdx=null, bestRows=null;
@@ -1290,7 +1291,12 @@ function parseWB(buf, fname){
   const cat = { meta:{ archivo:fname, hoja:best, cargado:new Date().toISOString(),
                        filas:bestRows.length, ordenes:nl, build:BUILD_ID,
                        version:'local-'+Date.now(), origen:'local' }, ordenes };
-  idbSet('kv','catalogo',cat).then(()=>{ CAT=cat; pg(100,'Listo'); setTimeout(()=>{ closeModal();
+  idbSet('kv','catalogo',cat).then(()=>{ 
+    CAT=cat; 
+    // Guardar también en localStorage como respaldo
+    try{localStorage.setItem('q_cat',JSON.stringify(cat));}catch(e){}
+    pg(100,'Listo'); 
+    setTimeout(()=>{ closeModal();
       toast(nl.toLocaleString('es-CL')+' órdenes cargadas'); refreshHome(); publicarPrompt(); },350);
   }).catch(err=>{ closeModal(); alert('No se pudo guardar: '+err); });
 }
@@ -2575,6 +2581,8 @@ function buscarBasePublicada(manual){
 
 /* ---------- arranque: usa lo guardado y busca actualización ---------- */
 const NODATA_HTML = $('noData').innerHTML;
+// Intenta cargar del localStorage si existe (acelerador)
+try{ if(!CAT && localStorage.getItem('q_cat')) CAT=JSON.parse(localStorage.getItem('q_cat')); }catch(e){}
 sincronizarMP();
 idbGet('kv','catalogo').then(c=>{
   CAT = c || null;
