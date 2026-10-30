@@ -1498,14 +1498,79 @@ function renderAgenda(){
 function agExcel(){
   let rows = agLlegadas(AGDIA);
   if(AGALM && AGALM!=='__all') rows = rows.filter(r=>r.alms.indexOf(AGALM)>=0);
-  if(AGFIL==='pend') rows = rows.filter(r=>r.skuPend>0);
+  // el Excel lleva TODAS las órdenes del día: pendientes y ya recepcionadas
   if(!rows.length){ toast('No hay órdenes para exportar'); return; }
-  const aoa=[['Fecha entrega','Proveedor','Orden','Almacen','SKU por recibir','SKU en la orden','Cantidad pendiente']];
-  rows.forEach(r=>aoa.push([iso2dmy(AGDIA), r.prov, r.oc, r.alms.join(' / '), r.skuPend, r.skuTot, r.cantPend]));
-  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=[{wch:13},{wch:38},{wch:10},{wch:16},{wch:15},{wch:15},{wch:18}];
-  XLSX.utils.book_append_sheet(wb,ws,'Llegadas');
-  XLSX.writeFile(wb,'Llegadas_'+AGDIA+((AGALM&&AGALM!=='__all')?('_'+String(AGALM).replace(/\W/g,'')):'')+'.xlsx');
+
+  idbAll('rec').then(rs=>{
+    const recs = {};
+    (rs||[]).forEach(r=>{ if(r && r.oc){ migraRecep(r); recs[r.oc]=r; } });
+    const fecha = iso2dmy(AGDIA);
+
+    /* ---------- Hoja 1: detalle por producto ---------- */
+    const det = [['Fecha entrega','Proveedor','Orden','Almacen','SKU','Descripcion','Linea',
+                  'Situacion','Cantidad pedida OC','Ya ingresado SAP','DEBE LLEGAR','LLEGÓ','DIFERENCIA',
+                  'Faltante','A favor','Estado','Fecha recepcion','Receptor','Factura(s)','Lote(s)','Cajas','Motivo excedente']];
+    const res = [['Fecha entrega','Proveedor','Orden','Almacen','SKU en la orden','SKU pendientes','SKU recepcionados',
+                  'DEBE LLEGAR','LLEGÓ','DIFERENCIA','Faltante','A favor','Estado']];
+    let tDebe=0, tLlego=0, tFal=0, tFav=0, nPend=0, nRec=0;
+
+    rows.forEach(r=>{
+      const o = CAT.ordenes[r.oc], rec = recs[r.oc] || null;
+      const fmap = rec? facMap(rec) : {};
+      let oDebe=0, oLlego=0, oFal=0, oFav=0, nLin=0, oPend=0, oRec=0;
+      const ls = Object.values(o.lineas).sort((a,b)=> String(a.linea).localeCompare(String(b.linea),undefined,{numeric:true}));
+      ls.forEach(L=>{
+        const alm = up(L.alm)||up(o.alm);
+        if(AGALM && AGALM!=='__all' && alm && alm!==AGALM) return;
+        const lotes = rec? (rec.lineas[L.key]||[]) : [];
+        const debe  = Math.max(0, L.cant - L.entr);
+        const llego = lotes.reduce((s,l)=>s+num(l.cant),0);
+        const dif = llego - debe;
+        const fal = dif<-0.001? -dif : 0, fav = dif>0.001? dif : 0;
+        const enSap = debe<=0.001 && llego<=0.001;
+        const sit = enSap? 'RECEPCIONADO EN SAP' : (llego>0.001? 'RECEPCIONADO EN APP' : 'PENDIENTE');
+        if(sit==='PENDIENTE') oPend++; else oRec++;
+        const est = enSap? 'CONFORME (SAP)'
+                  : llego<=0.001? 'NO LLEGÓ'
+                  : Math.abs(dif)<0.001? 'CONFORME' : (dif<0? 'FALTANTE' : 'EXCESO');
+        const facs = {}, mots = {};
+        lotes.forEach(l=>{ const f=fmap[l.fid]; if(f) facs[f]=1; const m=up(l.difmot); if(m) mots[m]=1; });
+        const cajas = lotes.reduce((s,l)=>s+num(l.cajas),0);
+        det.push([fecha, o.prov||r.prov, r.oc, alm, L.sku, L.desc, L.linea, sit,
+                  L.cant, L.entr, debe, llego, Math.abs(dif)<0.001?0:dif,
+                  fal, fav, est,
+                  rec&&llego? iso2dmy(rec.fecha):'', rec&&llego? (rec.receptor||''):'',
+                  Object.keys(facs).join(' / '),
+                  lotes.map(l=>l.lote||'—').join(' / '),
+                  cajas||'', Object.keys(mots).join(' / ')]);
+        oDebe+=debe; oLlego+=llego; oFal+=fal; oFav+=fav; nLin++;
+      });
+      if(!nLin) return;
+      const oDif = oLlego - oDebe;
+      const oEst = (oPend===0 && oLlego<=0.001)? 'RECEPCIONADA EN SAP' : oLlego<=0.001? 'NO LLEGÓ' : (oFal>0.001? 'CON FALTANTE' : (oFav>0.001? 'CON EXCESO' : 'CONFORME'));
+      res.push([fecha, r.prov, r.oc, r.alms.join(' / '), nLin, oPend, oRec,
+                oDebe, oLlego, Math.abs(oDif)<0.001?0:oDif, oFal, oFav, oEst]);
+      tDebe+=oDebe; tLlego+=oLlego; tFal+=oFal; tFav+=oFav; nPend+=oPend; nRec+=oRec;
+    });
+
+    const tDif = Math.abs(tLlego-tDebe)<0.001? 0 : tLlego-tDebe;
+    det.push([]);
+    det.push(['TOTAL','','','','','','','','','',tDebe,tLlego,tDif,tFal,tFav]);
+    res.push([]);
+    res.push(['TOTAL','','','','',nPend,nRec,tDebe,tLlego,tDif,tFal,tFav]);
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(det);
+    ws1['!cols']=[{wch:12},{wch:34},{wch:9},{wch:11},{wch:11},{wch:42},{wch:6},{wch:21},
+                  {wch:13},{wch:13},{wch:12},{wch:10},{wch:11},
+                  {wch:10},{wch:9},{wch:15},{wch:12},{wch:14},{wch:16},{wch:18},{wch:7},{wch:26}];
+    ws1['!autofilter']={ref:'A1:V'+(det.length-2)};
+    const ws2 = XLSX.utils.aoa_to_sheet(res);
+    ws2['!cols']=[{wch:12},{wch:38},{wch:9},{wch:14},{wch:13},{wch:14},{wch:17},{wch:12},{wch:10},{wch:11},{wch:10},{wch:9},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,ws1,'Detalle');
+    XLSX.utils.book_append_sheet(wb,ws2,'Resumen por OC');
+    XLSX.writeFile(wb,'Llegadas_'+AGDIA+((AGALM&&AGALM!=='__all')?('_'+String(AGALM).replace(/\W/g,'')):'')+'.xlsx');
+  }).catch(e=>{ console.error(e); toast('No se pudo generar el Excel'); });
 }
 
 /* ================================================================
